@@ -35,11 +35,6 @@ try:
 except ImportError:
     BM25Okapi = None
 
-try:
-    import google.generativeai as genai
-except ImportError:
-    genai = None
-
 from app.config import settings
 
 logger = logging.getLogger(__name__)

@@ -14,12 +14,37 @@ import {
   X,
 } from 'lucide-react';
 import { getUserProfile, getDefaultStudyPlan, generateStudyPlan, completeRoadmapNode } from '@/lib/api';
-import { StudyPlan, LearningPathNode } from '@/types';
+import { LearningHistoryItem, LearningPathNode, LearningProfile, StudyPlan } from '@/types';
 import { RoadmapTree } from '@/components/dashboard/RoadmapTree';
+
+const FALLBACK_PROFILE: LearningProfile = {
+  name: 'Learner',
+  overall_score: 94.5,
+  total_sessions: 3,
+  topics_studied: [
+    'Atmospheric Carbon Cycles & Radiative Forcing',
+    'Attention Mechanism in Transformers',
+    'Renewable Energy Grid Storage',
+  ],
+  strong_concepts: [
+    'Stefan-Boltzmann Radiation Feedback',
+    'Query/Key Matrix Multiplications',
+    'Solid-State Battery Intermittency',
+  ],
+  weak_concepts: [
+    'Direct Air Capture Desorption Enthalpy',
+    'Inverse Scaling in High Dimensions',
+  ],
+  learning_history: [
+    { topic: 'Atmospheric Carbon Cycles & Radiative Forcing', mastery_percentage: 96.0, timestamp: '2026-09-02T22:30:00Z' },
+    { topic: 'Attention Mechanism in Transformers', mastery_percentage: 94.0, timestamp: '2026-09-02T23:15:00Z' },
+    { topic: 'Renewable Energy Grid Storage', mastery_percentage: 92.5, timestamp: '2026-09-03T00:10:00Z' },
+  ],
+};
 
 export default function StudentDashboardPage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<LearningProfile | null>(null);
   const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
   const [activeTab, setActiveTab] = useState<'roadmap' | 'history' | 'weak_nodes'>('roadmap');
   const [selectedTrack, setSelectedTrack] = useState<'greentech' | 'aiml' | 'custom'>('greentech');
@@ -37,37 +62,15 @@ export default function StudentDashboardPage() {
         if (resProf.profile && resProf.profile.user_id) {
           setProfile(resProf.profile);
         } else {
-          setProfile({
-            name: 'Learner',
-            overall_score: 94.5,
-            total_sessions: 3,
-            topics_studied: [
-              'Atmospheric Carbon Cycles & Radiative Forcing',
-              'Attention Mechanism in Transformers',
-              'Renewable Energy Grid Storage',
-            ],
-            strong_concepts: [
-              'Stefan-Boltzmann Radiation Feedback',
-              'Query/Key Matrix Multiplications',
-              'Solid-State Battery Intermittency',
-            ],
-            weak_concepts: [
-              'Direct Air Capture Desorption Enthalpy',
-              'Inverse Scaling in High Dimensions',
-            ],
-            learning_history: [
-              { topic: 'Atmospheric Carbon Cycles & Radiative Forcing', mastery_percentage: 96.0, timestamp: '2026-09-02T22:30:00Z' },
-              { topic: 'Attention Mechanism in Transformers', mastery_percentage: 94.0, timestamp: '2026-09-02T23:15:00Z' },
-              { topic: 'Renewable Energy Grid Storage', mastery_percentage: 92.5, timestamp: '2026-09-03T00:10:00Z' },
-            ],
-          });
+          setProfile(FALLBACK_PROFILE);
         }
         const resPlan = await getDefaultStudyPlan('greentech');
         if (resPlan.plan) {
           setStudyPlan(resPlan.plan);
         }
       } catch (err) {
-        console.error('Failed to load dashboard data:', err);
+        console.warn('Failed to load dashboard data:', err);
+        setProfile(FALLBACK_PROFILE);
       } finally {
         setLoading(false);
       }
@@ -82,7 +85,7 @@ export default function StudentDashboardPage() {
       const res = await getDefaultStudyPlan(trackKey);
       if (res.plan) { setStudyPlan(res.plan); }
     } catch (e) {
-      console.error('Failed to switch track:', e);
+      console.warn('Failed to switch track:', e);
     } finally {
       setLoading(false);
     }
@@ -106,7 +109,7 @@ export default function StudentDashboardPage() {
         setActiveTab('roadmap');
       }
     } catch (err) {
-      console.error('Failed to generate study plan:', err);
+      console.warn('Failed to generate study plan:', err);
     } finally {
       setIsGeneratingPlan(false);
     }
@@ -149,6 +152,12 @@ export default function StudentDashboardPage() {
         </Link>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/classroom"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm"
+          >
+            Enter Classroom
+          </Link>
           <button
             onClick={() => setShowNewPlanModal(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm"
@@ -160,7 +169,7 @@ export default function StudentDashboardPage() {
             href="/"
             className="px-5 py-2 rounded-full text-xs uppercase tracking-[0.12em] text-white bg-slate-900 hover:bg-slate-800 font-medium transition-transform hover:scale-[1.02] shadow-sm"
           >
-            Start Lesson
+            Home
           </Link>
         </div>
       </nav>
@@ -254,7 +263,7 @@ export default function StudentDashboardPage() {
               <h3 className="font-['Instrument_Serif'] text-xl text-slate-900 mb-4">Completed Sessions</h3>
               <div className="space-y-3">
                 {profile?.learning_history && profile.learning_history.length > 0 ? (
-                  profile.learning_history.map((hist: any, idx: number) => (
+                  profile.learning_history.map((hist: LearningHistoryItem, idx: number) => (
                     <div
                       key={idx}
                       className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4"

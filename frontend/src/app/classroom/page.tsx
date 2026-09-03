@@ -8,22 +8,35 @@ import { TeacherVideoFeed } from '@/components/classroom/TeacherVideoFeed';
 import { CheckpointDrawer } from '@/components/classroom/CheckpointDrawer';
 import { ClassroomHeader } from '@/components/classroom/ClassroomHeader';
 import { MasteryReportModal } from '@/components/classroom/MasteryReportModal';
-import { LessonPlan, StudentProfile } from '@/types';
+import { EducationalLevel, LanguageCode, LessonPlan, StudentProfile } from '@/types';
 
 import sampleLessonData from '../../../../shared/samples/sample-lesson.json';
+
+const EDUCATIONAL_LEVELS: EducationalLevel[] = ['Beginner', 'Intermediate', 'Advanced'];
+const LANGUAGE_CODES: LanguageCode[] = ['English', 'Hindi', 'Hinglish', 'Spanish'];
+
+function coerceEducationalLevel(value: string | null): EducationalLevel {
+  return EDUCATIONAL_LEVELS.includes(value as EducationalLevel)
+    ? (value as EducationalLevel)
+    : 'Intermediate';
+}
+
+function coerceLanguage(value: string | null): LanguageCode {
+  return LANGUAGE_CODES.includes(value as LanguageCode) ? (value as LanguageCode) : 'Hinglish';
+}
 
 function ClassroomContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId') || `demo-session-${Date.now()}`;
   const topic = searchParams.get('topic') || 'Attention Mechanism in Transformers';
-  const language = searchParams.get('lang') || 'Hinglish';
-  const level = searchParams.get('level') || 'Intermediate';
+  const language = coerceLanguage(searchParams.get('lang'));
+  const level = coerceEducationalLevel(searchParams.get('level'));
 
   const initialProfile: StudentProfile = {
     target_topic: topic,
-    educational_level: level as any,
-    language: language as any,
+    educational_level: level,
+    language,
     available_time_minutes: '20',
   };
 

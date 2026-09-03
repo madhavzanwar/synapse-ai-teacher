@@ -33,6 +33,36 @@ interface CheckpointDrawerProps {
   onAdvance: () => void;
 }
 
+interface SpeechRecognitionResultEventLike {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionResultEventLike) => void) | null;
+  onerror: ((event: unknown) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+interface WindowWithSpeechRecognition extends Window {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+}
+
 export const CheckpointDrawer: React.FC<CheckpointDrawerProps> = ({
   checkpoint,
   sessionId,
@@ -53,13 +83,14 @@ export const CheckpointDrawer: React.FC<CheckpointDrawerProps> = ({
   const [followUpOptionId, setFollowUpOptionId] = useState<string | null>(null);
   const [followUpText, setFollowUpText] = useState('');
 
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   // Initialize Speech Recognition if supported in browser
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const speechWindow = window as WindowWithSpeechRecognition;
       const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
       if (SpeechRecognition) {
         setSpeechSupported(true);
         const recognition = new SpeechRecognition();
@@ -67,7 +98,7 @@ export const CheckpointDrawer: React.FC<CheckpointDrawerProps> = ({
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
-        recognition.onresult = (event: any) => {
+        recognition.onresult = (event) => {
           let transcript = '';
           for (let i = event.resultIndex; i < event.results.length; i++) {
             transcript += event.results[i][0].transcript;
@@ -77,8 +108,8 @@ export const CheckpointDrawer: React.FC<CheckpointDrawerProps> = ({
           }
         };
 
-        recognition.onerror = (err: any) => {
-          console.error('Speech recognition error:', err);
+        recognition.onerror = (err) => {
+          console.warn('Speech recognition error:', err);
           setIsRecording(false);
         };
 
@@ -101,7 +132,7 @@ export const CheckpointDrawer: React.FC<CheckpointDrawerProps> = ({
         recognitionRef.current.start();
         setIsRecording(true);
       } catch (err) {
-        console.error('Failed to start speech recognition:', err);
+        console.warn('Failed to start speech recognition:', err);
       }
     }
   };

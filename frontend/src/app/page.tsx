@@ -109,7 +109,7 @@ export default function HomePage() {
         setUploadedDocName(res.filename);
       }
     } catch (err) {
-      console.error('File upload error:', err);
+      console.warn('File upload error:', err);
     } finally {
       setIsUploading(false);
     }
@@ -150,7 +150,7 @@ export default function HomePage() {
         );
       }
     } catch (err) {
-      console.error('Failed to create classroom session:', err);
+      console.warn('Failed to create classroom session:', err);
       const fallbackId = `local-${Date.now()}`;
       router.push(
         `/classroom?sessionId=${fallbackId}&topic=${encodeURIComponent(topic)}&lang=${language}&level=${educationalLevel}&persona=${instructorPersona}`
@@ -186,25 +186,33 @@ export default function HomePage() {
 
         <div className="hidden md:flex items-center gap-8">
           <Link href="/classroom" className="text-sm text-neutral-300 hover:text-white transition-colors tracking-wide">
-            Curriculum
-          </Link>
-          <Link href="/classroom" className="text-sm text-neutral-300 hover:text-white transition-colors tracking-wide">
-            Studio
+            Live Classroom
           </Link>
           <Link href="/dashboard" className="text-sm text-neutral-300 hover:text-white transition-colors tracking-wide">
-            Diagnostics
+            Analytics & Progress
           </Link>
-          <Link href="/dashboard" className="text-sm text-neutral-300 hover:text-white transition-colors tracking-wide">
-            Telemetry
-          </Link>
+          <button
+            onClick={() => setShowConfigurator(true)}
+            className="text-sm text-neutral-300 hover:text-white transition-colors tracking-wide cursor-pointer"
+          >
+            Custom Curriculum
+          </button>
         </div>
 
-        <Link
-          href="/dashboard"
-          className="liquid-glass rounded-full px-6 py-2.5 text-xs uppercase tracking-[0.15em] text-white transition-transform hover:scale-[1.03] active:scale-[0.98] font-medium"
-        >
-          Dashboard
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/classroom"
+            className="px-5 py-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-xs tracking-wide text-white transition-all font-medium"
+          >
+            Classroom
+          </Link>
+          <Link
+            href="/dashboard"
+            className="liquid-glass rounded-full px-5 py-2 text-xs uppercase tracking-[0.15em] text-white transition-transform hover:scale-[1.03] active:scale-[0.98] font-medium"
+          >
+            Dashboard
+          </Link>
+        </div>
       </nav>
 
       {/* ─── Hero Content ─── */}
@@ -220,12 +228,27 @@ export default function HomePage() {
           evolves with you.
         </p>
 
-        <button
-          onClick={() => setShowConfigurator(true)}
-          className="liquid-glass rounded-full px-12 py-4 text-sm font-medium tracking-wide text-white mt-10 hover:scale-[1.03] active:scale-[0.98] transition-transform animate-fade-rise-delay-2 cursor-pointer"
-        >
-          Begin Journey
-        </button>
+        {/* Hero Section Connected Action Buttons */}
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-10 animate-fade-rise-delay-2">
+          <button
+            onClick={() => setShowConfigurator(true)}
+            className="liquid-glass rounded-full px-8 py-4 text-sm font-medium tracking-wide text-white hover:scale-[1.03] active:scale-[0.98] transition-transform cursor-pointer shadow-lg shadow-white/5"
+          >
+            Begin Custom Journey
+          </button>
+          <Link
+            href="/classroom"
+            className="px-8 py-4 rounded-full bg-white text-slate-900 hover:bg-neutral-100 text-sm font-medium tracking-wide transition-transform hover:scale-[1.03] active:scale-[0.98] shadow-md"
+          >
+            Enter Classroom
+          </Link>
+          <Link
+            href="/dashboard"
+            className="px-7 py-4 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-sm font-medium tracking-wide text-neutral-200 hover:text-white transition-all backdrop-blur-md"
+          >
+            Mastery Dashboard
+          </Link>
+        </div>
       </main>
 
       {/* ─── Clean Footer ─── */}

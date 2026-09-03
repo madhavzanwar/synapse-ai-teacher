@@ -1,9 +1,23 @@
-import { StudentProfile, StudentResponse } from "../types";
+import { StudentProfile, StudentResponse, StudyMaterials } from "../types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  const primaryUrl = `${API_BASE_URL}${path}`;
+  try {
+    return await fetch(primaryUrl, init);
+  } catch (error) {
+    if (API_BASE_URL.includes("localhost")) {
+      const fallbackUrl = primaryUrl.replace("localhost", "127.0.0.1");
+      console.warn(`Primary API fetch failed, retrying ${fallbackUrl}`, error);
+      return fetch(fallbackUrl, init);
+    }
+    throw error;
+  }
+}
+
 export async function createClassroomSession(profile: StudentProfile, documentContentOverride?: string) {
-  const res = await fetch(`${API_BASE_URL}/api/classroom/session/create`, {
+  const res = await apiFetch(`/api/classroom/session/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -17,6 +31,23 @@ export async function createClassroomSession(profile: StudentProfile, documentCo
   return res.json();
 }
 
+export interface SimliSessionResponse {
+  success: boolean;
+  session_token: string;
+  ice_servers: RTCIceServer[];
+}
+
+export async function createSimliSession(): Promise<SimliSessionResponse> {
+  const res = await apiFetch(`/api/v1/simli/session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to create Simli session: ${res.statusText}`);
+  }
+  return res.json();
+}
+
 export async function uploadDocument(file: File, title?: string) {
   const formData = new FormData();
   formData.append("file", file);
@@ -24,7 +55,7 @@ export async function uploadDocument(file: File, title?: string) {
     formData.append("title", title);
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/documents/upload`, {
+  const res = await apiFetch(`/api/documents/upload`, {
     method: "POST",
     body: formData,
   });
@@ -35,7 +66,7 @@ export async function uploadDocument(file: File, title?: string) {
 }
 
 export async function submitAnswer(sessionId: string, response: StudentResponse) {
-  const res = await fetch(`${API_BASE_URL}/api/classroom/session/${sessionId}/answer`, {
+  const res = await apiFetch(`/api/classroom/session/${sessionId}/answer`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(response),
@@ -47,7 +78,7 @@ export async function submitAnswer(sessionId: string, response: StudentResponse)
 }
 
 export async function advanceCurriculum(sessionId: string) {
-  const res = await fetch(`${API_BASE_URL}/api/classroom/session/${sessionId}/advance`, {
+  const res = await apiFetch(`/api/classroom/session/${sessionId}/advance`, {
     method: "POST",
   });
   if (!res.ok) {
@@ -56,8 +87,8 @@ export async function advanceCurriculum(sessionId: string) {
   return res.json();
 }
 
-export async function exportStudyMaterials(sessionId: string) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/session/${sessionId}/export-materials`);
+export async function exportStudyMaterials(sessionId: string): Promise<StudyMaterials> {
+  const res = await apiFetch(`/api/v1/session/${sessionId}/export-materials`);
   if (!res.ok) {
     throw new Error(`Failed to fetch study materials: ${res.statusText}`);
   }
@@ -65,7 +96,7 @@ export async function exportStudyMaterials(sessionId: string) {
 }
 
 export async function getUserProfile(userId: string = "default_user") {
-  const res = await fetch(`${API_BASE_URL}/api/v1/user/${userId}/profile`);
+  const res = await apiFetch(`/api/v1/user/${userId}/profile`);
   if (!res.ok) {
     throw new Error(`Failed to fetch user profile: ${res.statusText}`);
   }
@@ -87,7 +118,7 @@ export async function generateStudyPlan(data: {
   language?: string;
   user_id?: string;
 }) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/study-plan/generate`, {
+  const res = await apiFetch(`/api/v1/study-plan/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -99,7 +130,7 @@ export async function generateStudyPlan(data: {
 }
 
 export async function getStudyPlan(planId: string) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/study-plan/${planId}`);
+  const res = await apiFetch(`/api/v1/study-plan/${planId}`);
   if (!res.ok) {
     throw new Error(`Failed to fetch study plan: ${res.statusText}`);
   }
@@ -107,7 +138,7 @@ export async function getStudyPlan(planId: string) {
 }
 
 export async function getDefaultStudyPlan(topicKey: string = "greentech") {
-  const res = await fetch(`${API_BASE_URL}/api/v1/study-plan/default/${topicKey}`);
+  const res = await apiFetch(`/api/v1/study-plan/default/${topicKey}`);
   if (!res.ok) {
     throw new Error(`Failed to fetch default study plan: ${res.statusText}`);
   }
@@ -115,7 +146,7 @@ export async function getDefaultStudyPlan(topicKey: string = "greentech") {
 }
 
 export async function completeRoadmapNode(planId: string, nodeId: string) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/study-plan/${planId}/complete-node`, {
+  const res = await apiFetch(`/api/v1/study-plan/${planId}/complete-node`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ node_id: nodeId }),

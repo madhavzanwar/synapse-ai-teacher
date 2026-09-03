@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { VisualAction, VisualType } from '@/types';
+import { ChartDataPoint, VisualAction, VisualType } from '@/types';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import mermaid from 'mermaid';
@@ -78,7 +78,7 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
           throwOnError: false,
         });
       } catch (err) {
-        console.error('KaTeX rendering error:', err);
+        console.warn('KaTeX rendering error:', err);
       }
     }
   }, [visualAction]);
@@ -94,7 +94,7 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
             mermaidRef.current.innerHTML = svg;
           }
         } catch (err) {
-          console.error('Mermaid rendering error:', err);
+          console.warn('Mermaid rendering error:', err);
           if (mermaidRef.current) {
             mermaidRef.current.innerHTML = `<pre class="text-rose-600 p-4 font-mono text-sm">${visualAction.raw_payload}</pre>`;
           }
@@ -114,7 +114,8 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
     setTimeout(() => {
       setIsExecutingCode(false);
       setCodeOutput(
-        `>>> Executing ${visualAction?.title || 'Script'}...\n[Tensor Flow Initialized]\nOutput Shape: torch.Size([2, 8, 64])\nAttention Weights Matrix Shape: torch.Size([2, 8, 8])\nExecution Succeeded in 12.4ms (CUDA Device 0)`
+        visualAction?.execution_result ||
+          `>>> Executing ${visualAction?.title || 'Script'}...\n[Tensor Flow Initialized]\nOutput Shape: torch.Size([2, 8, 64])\nAttention Weights Matrix Shape: torch.Size([2, 8, 8])\nExecution Succeeded in 12.4ms (CUDA Device 0)`
       );
     }, 600);
   };
@@ -166,6 +167,22 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
     { step: '400', loss: 0.43, accuracy: 0.91 },
     { step: '500', loss: 0.28, accuracy: 0.96 },
   ];
+
+  const chartData: ChartDataPoint[] = visualAction?.chart_data?.length
+    ? visualAction.chart_data
+    : (() => {
+        if (visualAction?.type !== 'chart' || !visualAction.raw_payload?.trim()) {
+          return sampleChartData;
+        }
+        try {
+          const parsed = JSON.parse(visualAction.raw_payload);
+          return Array.isArray(parsed) && parsed.length ? parsed : sampleChartData;
+        } catch {
+          return sampleChartData;
+        }
+      })();
+  const chartSeries = Object.keys(chartData[0] || {}).filter((key) => key !== 'step');
+  const seriesColors = ['#e11d48', '#059669', '#2563eb', '#d97706', '#7c3aed'];
 
   return (
     <div
@@ -338,7 +355,7 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
             >
               <div className="flex-1 w-full h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={sampleChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="step" stroke="#64748b" />
                     <YAxis stroke="#64748b" />
@@ -346,8 +363,16 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
                       contentStyle={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderRadius: '12px', color: '#0f172a' }}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="loss" stroke="#e11d48" strokeWidth={2} name="Training Loss" />
-                    <Line type="monotone" dataKey="accuracy" stroke="#059669" strokeWidth={2} name="Validation Accuracy" />
+                    {chartSeries.map((series, index) => (
+                      <Line
+                        key={series}
+                        type="monotone"
+                        dataKey={series}
+                        stroke={seriesColors[index % seriesColors.length]}
+                        strokeWidth={2}
+                        name={series.replace(/_/g, ' ')}
+                      />
+                    ))}
                   </LineChart>
                 </ResponsiveContainer>
               </div>

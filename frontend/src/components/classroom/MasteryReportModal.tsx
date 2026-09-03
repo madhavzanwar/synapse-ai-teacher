@@ -26,7 +26,7 @@ import {
   ChevronRight,
   Zap,
 } from 'lucide-react';
-import { MasteryReport } from '@/types';
+import { MasteryReport, StudyMaterials } from '@/types';
 import { exportStudyMaterials, getAnkiDownloadUrl, getNotesDownloadUrl } from '@/lib/api';
 
 interface MasteryReportModalProps {
@@ -43,7 +43,7 @@ export const MasteryReportModal: React.FC<MasteryReportModalProps> = ({
   onRestart,
 }) => {
   const [activeTab, setActiveTab] = useState<'analytics' | 'flashcards'>('analytics');
-  const [studyMaterials, setStudyMaterials] = useState<any>(null);
+  const [studyMaterials, setStudyMaterials] = useState<StudyMaterials | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
@@ -56,7 +56,7 @@ export const MasteryReportModal: React.FC<MasteryReportModalProps> = ({
           const data = await exportStudyMaterials(report!.session_id);
           setStudyMaterials(data);
         } catch (e) {
-          console.error('Failed to fetch study materials:', e);
+          console.warn('Failed to fetch study materials:', e);
         } finally {
           setLoadingMaterials(false);
         }

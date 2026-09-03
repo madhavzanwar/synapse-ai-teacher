@@ -42,6 +42,7 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
   const [audioWaves, setAudioWaves] = useState<number[]>([15, 25, 45, 60, 30, 75, 40, 20]);
   const [webRtcActive, setWebRtcActive] = useState(false);
   const [isSimliConnecting, setIsSimliConnecting] = useState(false);
+  const [simliStatusText, setSimliStatusText] = useState<string | null>(null);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -58,11 +59,13 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
         simliClientRef.current = null;
       }
       setWebRtcActive(false);
+      setSimliStatusText(null);
       return;
     }
 
     if (!videoRef.current || !audioRef.current) return;
     setIsSimliConnecting(true);
+    setSimliStatusText('Connecting to Simli WebRTC...');
 
     try {
       const client = new SimliClientManager({
@@ -76,12 +79,19 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
 
       if (success) {
         setWebRtcActive(true);
+        setSimliStatusText('Simli Live Avatar Connected');
+        setTimeout(() => setSimliStatusText(null), 4000);
       } else {
-        alert('Simli WebRTC Avatar is initializing. If your free trial limit is reached on Simli, the interactive 2D canvas teacher avatar is active.');
+        setWebRtcActive(false);
+        setSimliStatusText('Interactive 2D Canvas Active (Fallback)');
+        setTimeout(() => setSimliStatusText(null), 4000);
       }
     } catch (err) {
-      console.error('Simli toggle error:', err);
+      console.warn('Simli toggle error:', err);
       setIsSimliConnecting(false);
+      setWebRtcActive(false);
+      setSimliStatusText('Interactive 2D Canvas Active');
+      setTimeout(() => setSimliStatusText(null), 4000);
     }
   };
 
@@ -382,7 +392,10 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
           id="webrtc-avatar-video"
           autoPlay
           playsInline
-          className={`w-full h-full object-cover ${webRtcActive ? 'block' : 'hidden'}`}
+          muted={false}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+            webRtcActive ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'
+          }`}
         />
 
         {/* 2D Canvas Procedural Avatar Fallback */}
@@ -390,11 +403,20 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
           ref={canvasRef}
           width={360}
           height={260}
-          className={`w-full h-full object-cover ${webRtcActive ? 'hidden' : 'block'}`}
+          className="w-full h-full object-cover z-5"
         />
 
+        {/* Non-intrusive status toast */}
+        {simliStatusText && (
+          <div className="absolute top-12 left-4 right-4 z-20 flex justify-center">
+            <div className="px-3 py-1.5 rounded-full bg-slate-900/90 text-white text-[11px] font-medium backdrop-blur-md shadow-lg border border-slate-700 animate-fade-in">
+              {simliStatusText}
+            </div>
+          </div>
+        )}
+
         {/* Audio Spectrum Waveform Bar */}
-        <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1 px-4 pointer-events-none">
+        <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1 px-4 pointer-events-none z-20">
           {audioWaves.map((height, idx) => (
             <motion.div
               key={idx}

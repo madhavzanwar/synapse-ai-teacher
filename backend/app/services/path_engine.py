@@ -9,9 +9,9 @@ import json
 import re
 import logging
 from typing import Dict, Any, List, Optional
-import google.generativeai as genai
 
 from app.config import settings
+from app.services.gemini_client import generate_json
 from app.schemas.lesson import (
     StudyPlan,
     LearningPathNode,
@@ -22,34 +22,15 @@ from app.schemas.lesson import (
 
 logger = logging.getLogger(__name__)
 
-if settings.GEMINI_API_KEY:
-    try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-    except Exception as e:
-        logger.warning(f"Failed to configure Gemini in path_engine: {e}")
-
-
 def _call_gemini_json(prompt: str, system_instruction: str = "") -> Optional[Dict[str, Any]]:
     """Calls Gemini with strict JSON mode."""
-    if not settings.GEMINI_API_KEY:
-        return None
-    try:
-        model = genai.GenerativeModel(
-            model_name=settings.GEMINI_MODEL_NAME,
-            system_instruction=system_instruction,
-            generation_config={
-                "response_mime_type": "application/json",
-                "temperature": 0.3,
-            }
-        )
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-        text = re.sub(r"^```json\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
-        return json.loads(text)
-    except Exception as e:
-        logger.warning(f"Gemini API call failed in StudyPlannerEngine: {e}")
-        return None
+    return generate_json(
+        prompt,
+        model_name=settings.GEMINI_MODEL,
+        system_instruction=system_instruction,
+        temperature=0.3,
+        caller="StudyPlannerEngine",
+    )
 
 
 # Built-in High-Yield Default Curricula Presets

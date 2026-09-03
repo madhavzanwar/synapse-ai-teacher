@@ -11,11 +11,6 @@ import re
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
-try:
-    import google.generativeai as genai
-except ImportError:
-    genai = None
-
 from app.config import settings
 from app.schemas.lesson import LessonPlan, MasteryReport, Checkpoint
 

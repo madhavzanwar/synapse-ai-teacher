@@ -1,7 +1,8 @@
 /**
  * Simli WebRTC Video Avatar Client using the official `simli-client` SDK.
  */
-import { SimliClient as SimliSDKClient, generateSimliSessionToken, generateIceServers, LogLevel } from 'simli-client';
+import { SimliClient as SimliSDKClient, LogLevel } from 'simli-client';
+import { createSimliSession } from '@/lib/api';
 
 export interface SimliSessionConfig {
   apiKey?: string;
@@ -11,44 +12,29 @@ export interface SimliSessionConfig {
 }
 
 export class SimliClientManager {
-  private apiKey: string;
-  private faceId: string;
   private videoElement: HTMLVideoElement;
   private audioElement: HTMLAudioElement;
-  private client: SimliSDKClient | null = null;
+  public client: SimliSDKClient | null = null;
+  public isStarted: boolean = false;
 
   constructor(config: SimliSessionConfig) {
-    this.apiKey = config.apiKey || process.env.NEXT_PUBLIC_SIMLI_API_KEY || '';
-    this.faceId = config.faceId || process.env.NEXT_PUBLIC_SIMLI_FACE_ID || 'cace3ef7-a4c4-425d-a8cf-a5358eb0c427';
     this.videoElement = config.videoElement;
     this.audioElement = config.audioElement;
   }
 
   async start(): Promise<boolean> {
-    if (!this.apiKey) {
-      console.warn('Simli API Key is not configured in environment.');
-      return false;
-    }
-
     try {
-      console.log('Generating Simli session token for face:', this.faceId);
-      const tokenResponse = await generateSimliSessionToken({
-        apiKey: this.apiKey,
-        config: {
-          faceId: this.faceId,
-          handleSilence: true,
-          maxSessionLength: 600,
-          maxIdleTime: 120,
-        },
-      });
+      console.log('Requesting backend-minted Simli session.');
+      const tokenResponse = await createSimliSession();
 
       if (!tokenResponse?.session_token) {
-        console.error('Failed to get session token from Simli.');
+        console.warn('Failed to get a backend Simli session token.');
         return false;
       }
 
-      console.log('Simli session token received. Generating ICE servers...');
-      const iceServers = await generateIceServers(this.apiKey).catch(() => null);
+      const iceServers = tokenResponse.ice_servers?.length
+        ? tokenResponse.ice_servers
+        : [{ urls: ['stun:stun.l.google.com:19302'] }];
 
       console.log('Starting official Simli SDK Client...');
       this.client = new SimliSDKClient(
@@ -61,20 +47,29 @@ export class SimliClientManager {
 
       this.client.on('start', () => {
         console.log('Simli avatar stream started successfully!');
+        this.isStarted = true;
+        // ONLY attach audio element listener AFTER connection is open and start has fired
+        if (this.audioElement && this.client) {
+          try {
+            this.client.listenToAudioElement(this.audioElement);
+          } catch (e) {
+            console.warn('Audio listener deferred:', e);
+          }
+        }
       });
 
       this.client.on('error', (err: string) => {
-        console.error('Simli avatar error:', err);
+        console.warn('Simli avatar notice:', err);
       });
 
       this.client.on('startup_error', (msg: string) => {
-        console.error('Simli avatar startup error:', msg);
+        console.warn('Simli avatar startup notice:', msg);
       });
 
       await this.client.start();
       return true;
     } catch (err) {
-      console.error('Simli SDK start error:', err);
+      console.warn('Simli SDK start notice (interactive 2D canvas active):', err);
       return false;
     }
   }
@@ -84,9 +79,10 @@ export class SimliClientManager {
       try {
         this.client.stop();
       } catch (e) {
-        console.warn('Simli stop error:', e);
+        console.warn('Simli stop notice:', e);
       }
       this.client = null;
+      this.isStarted = false;
     }
   }
 }

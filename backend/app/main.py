@@ -65,6 +65,55 @@ async def root():
     }
 
 
+@app.post("/api/v1/simli/session")
+async def create_simli_session():
+    """
+    Create a short-lived Simli session from the backend so the browser never
+    needs the long-lived Simli API key.
+    """
+    if not settings.SIMLI_API_KEY:
+        raise HTTPException(status_code=503, detail="Simli API key is not configured")
+
+    headers = {
+        "Content-Type": "application/json",
+        "x-simli-api-key": settings.SIMLI_API_KEY,
+    }
+    token_payload = {
+        "faceId": settings.SIMLI_FACE_ID,
+        "handleSilence": True,
+        "maxSessionLength": 600,
+        "maxIdleTime": 120,
+    }
+
+    try:
+        import httpx
+
+        async with httpx.AsyncClient(base_url="https://api.simli.ai", timeout=15.0) as client:
+            token_response = await client.post("/compose/token", json=token_payload, headers=headers)
+            token_response.raise_for_status()
+            ice_response = await client.get("/compose/ice", headers=headers)
+            ice_servers = (
+                ice_response.json()
+                if ice_response.status_code == 200
+                else [{"urls": ["stun:stun.l.google.com:19302"]}]
+            )
+
+        session_token = token_response.json().get("session_token")
+        if not session_token:
+            raise HTTPException(status_code=502, detail="Simli did not return a session token")
+
+        return {
+            "success": True,
+            "session_token": session_token,
+            "ice_servers": ice_servers or [{"urls": ["stun:stun.l.google.com:19302"]}],
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("Simli session creation failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Failed to create Simli session")
+
+
 # ---------------------------------------------------------------------------
 # Phase 2: Production-Grade RAG Endpoints (/api/v1/...)
 # ---------------------------------------------------------------------------
@@ -553,7 +602,10 @@ async def classroom_websocket_endpoint(websocket: WebSocket, session_id: str):
             language="Hinglish",
             available_time_minutes="20",
         )
-        session = session_manager.create_session(default_profile, session_id=session_id)
+        session = session_manager.create_session(
+            session_id=session_id,
+            profile=default_profile
+        )
 
     await session_manager.register_connection(session_id, websocket)
     logger.info(f"WebSocket connected for session: {session_id}")

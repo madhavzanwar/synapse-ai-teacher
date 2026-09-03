@@ -53,6 +53,15 @@ export interface VisualAction {
   language_or_config?: string;
   explanation_notes?: string;
   entry_animation_cue?: string;
+  chart_data?: ChartDataPoint[];
+  execution_result?: string;
+}
+
+export interface ChartDataPoint {
+  step: string;
+  loss?: number;
+  accuracy?: number;
+  [key: string]: string | number | undefined;
 }
 
 export interface CheckpointOption {
@@ -149,6 +158,42 @@ export interface MasteryReport {
   module_records: ModuleMasteryRecord[];
   recommended_next_topics: string[];
   developer_watermark?: string;
+}
+
+export interface StudyFlashcard {
+  id: string;
+  front: string;
+  back: string;
+  tag: string;
+  is_weak_concept_targeted: boolean;
+}
+
+export interface StudyMaterials {
+  session_id: string;
+  topic: string;
+  overall_mastery_percentage: number;
+  generated_at: string;
+  flashcards: StudyFlashcard[];
+  anki_csv: string;
+  markdown_notes: string;
+  developer_watermark?: string;
+}
+
+export interface LearningHistoryItem {
+  topic: string;
+  mastery_percentage: number;
+  timestamp: string;
+}
+
+export interface LearningProfile {
+  user_id?: string;
+  name: string;
+  overall_score: number;
+  total_sessions: number;
+  topics_studied: string[];
+  strong_concepts: string[];
+  weak_concepts: string[];
+  learning_history: LearningHistoryItem[];
 }
 
 export interface ClassroomEvent {

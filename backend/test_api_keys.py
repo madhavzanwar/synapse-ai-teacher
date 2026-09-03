@@ -73,8 +73,8 @@ def test_api_keys():
 
     # 3. Validate Simli WebRTC Integration
     print("\n[3/3] Validating Simli Video Avatar Integration...")
-    simli_key = settings.SIMLI_API_KEY or os.environ.get("NEXT_PUBLIC_SIMLI_API_KEY", "")
-    simli_face = settings.SIMLI_FACE_ID or os.environ.get("NEXT_PUBLIC_SIMLI_FACE_ID", "")
+    simli_key = settings.SIMLI_API_KEY or ""
+    simli_face = settings.SIMLI_FACE_ID or ""
 
     if not simli_key:
         print("  [SKIP] SIMLI_API_KEY is not set (using procedural canvas avatar fallback).")

@@ -161,12 +161,12 @@ export function useClassroomSession({ sessionId, initialProfile }: UseClassroomS
         const payload: ClassroomEvent = JSON.parse(msgEvent.data);
         handleClassroomEvent(payload);
       } catch (e) {
-        console.error('Failed to parse WebSocket message:', e);
+        console.warn('Failed to parse WebSocket message:', e);
       }
     };
 
     ws.onerror = (err) => {
-      console.error('Classroom WebSocket error:', err);
+      console.warn('Classroom WebSocket status notice:', err);
     };
 
     ws.onclose = () => {
@@ -196,7 +196,7 @@ export function useClassroomSession({ sessionId, initialProfile }: UseClassroomS
       try {
         await submitAnswer(sessionId, response);
       } catch (err) {
-        console.error('Failed to submit answer via REST:', err);
+        console.warn('Failed to submit answer via REST:', err);
         setIsEvaluating(false);
       }
     }
@@ -237,7 +237,7 @@ export function useClassroomSession({ sessionId, initialProfile }: UseClassroomS
       try {
         await advanceCurriculum(sessionId);
       } catch (err) {
-        console.error('Failed to advance curriculum via REST:', err);
+        console.warn('Failed to advance curriculum via REST:', err);
       }
     }
   };
