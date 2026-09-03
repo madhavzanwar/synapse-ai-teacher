@@ -1,0 +1,123 @@
+{
+  "topic": "Attention Mechanism in Transformers",
+  "studentLevel": "Intermediate",
+  "language": "Hinglish",
+  "totalEstimatedMinutes": 15,
+  "pedagogicalGoals": [
+    "Understand why standard RNNs struggle with long-range dependencies",
+    "Master the intuition behind Query, Key, and Value vectors",
+    "Calculate Scaled Dot-Product Attention mathematically and implement in PyTorch"
+  ],
+  "modules": [
+    {
+      "moduleId": "mod-1",
+      "title": "The Query, Key, and Value Intuition",
+      "estimatedMinutes": 5,
+      "teachingScript": "<emotion=enthusiastic>Welcome to today's session! Aaj hum explore karne wale hain Transformer architecture ka sabse revolutionary component: Self-Attention Mechanism. <pause=300ms> Socho agar aap ek lamba sentence padh rahe ho, jaise 'The animal didn't cross the street because it was too tired' - aapka dimaag turant samajh jata hai ki 'it' yahan animal ke liye hai, street ke liye nahi. Par computer yeh kaise samjhe? Let's visualize this on our smart whiteboard!</emotion>",
+      "visualAction": {
+        "type": "mermaid",
+        "title": "Self-Attention Information Flow",
+        "rawPayload": "graph TD\n    Input[\"Input Token Embeddings (X)\"] --> Q[\"Query Matrix (Q = X * Wq)\"]\n    Input --> K[\"Key Matrix (K = X * Wk)\"]\n    Input --> V[\"Value Matrix (V = X * Wv)\"]\n    Q --> Dot[\"Dot Product (Q · K^T)\"]\n    K --> Dot\n    Dot --> Scale[\"Scale by 1/sqrt(d_k)\"]\n    Scale --> Softmax[\"Softmax (Attention Weights)\"]\n    Softmax --> WeightedSum[\"Weighted Sum with V\"]\n    V --> WeightedSum\n    WeightedSum --> Output[\"Contextual Output Z\"]\n    style Softmax fill:#6366f1,stroke:#4338ca,color:#fff\n    style WeightedSum fill:#10b981,stroke:#047857,color:#fff",
+        "languageOrConfig": "",
+        "explanationNotes": "Notice how Q acts as a search query, K acts as file tags, and V represents the actual content.",
+        "entryAnimationCue": "fade-slide"
+      },
+      "checkpoint": {
+        "questionId": "q1",
+        "questionText": "Why do we compute the dot product between the Query vector and Key vector in self-attention?",
+        "questionType": "mcq",
+        "options": [
+          {
+            "id": "A",
+            "text": "To measure the semantic compatibility or relevance between two tokens.",
+            "isCorrect": true,
+            "feedback": "Spot on! The dot product measures alignment in embedding space."
+          },
+          {
+            "id": "B",
+            "text": "To reduce the dimension of the embeddings to save memory.",
+            "isCorrect": false,
+            "feedback": "Dot product produces a scalar similarity score, not a dimension reduction technique."
+          },
+          {
+            "id": "C",
+            "text": "To introduce non-linear activation functions into the network.",
+            "isCorrect": false,
+            "feedback": "Dot product is a linear operation; Softmax provides the normalization."
+          },
+          {
+            "id": "D",
+            "text": "To randomly drop tokens during training.",
+            "isCorrect": false,
+            "feedback": "That would be dropout, not Query-Key dot products."
+          }
+        ],
+        "expectedConcept": "The dot product of Query and Key calculates similarity or attention weights between pairs of words.",
+        "rubric": "Check that student recognizes dot product as a measure of token-to-token similarity or relevance."
+      }
+    },
+    {
+      "moduleId": "mod-2",
+      "title": "The Scaled Dot-Product Equation",
+      "estimatedMinutes": 5,
+      "teachingScript": "<emotion=thoughtful>Ab aate hain exact mathematical formulation par. <pause=400ms> Dekho formula bohot elegant hai: Attention of Q, K, V is Softmax of Q times K transpose divided by root d_k, multiplied by V. <emotion=curious>Lekin yahan root d_k se divide kyu karte hain?</emotion> Kyunki jab vectors bade hote hain, dot product bahut bada ho jata hai, aur Softmax gradients zero ho jate hain!</emotion>",
+      "visualAction": {
+        "type": "katex",
+        "title": "Scaled Dot-Product Attention Equation",
+        "rawPayload": "\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right)V",
+        "languageOrConfig": "",
+        "explanationNotes": "d_k is the dimension of the key vectors. Dividing by sqrt(d_k) stabilizes gradient flow during backpropagation.",
+        "entryAnimationCue": "step-reveal"
+      },
+      "checkpoint": {
+        "questionId": "q2",
+        "questionText": "What would happen if we omitted the 1 / sqrt(d_k) scaling factor when d_k is large (e.g. 512)?",
+        "questionType": "explain_in_own_words",
+        "options": [],
+        "expectedConcept": "Large dot product values cause softmax outputs to saturate at 0 or 1, leading to extremely small (vanishing) gradients.",
+        "rubric": "Look for mention of softmax saturation, large variance in dot products, or vanishing gradients during backpropagation."
+      }
+    },
+    {
+      "moduleId": "mod-3",
+      "title": "PyTorch Implementation in Action",
+      "estimatedMinutes": 5,
+      "teachingScript": "<emotion=encouraging>Let's turn this theory into code! Here is how we implement Single-Head Attention cleanly in PyTorch in just a few lines of matrix operations.</emotion>",
+      "visualAction": {
+        "type": "code",
+        "title": "ScaledDotProductAttention.py",
+        "rawPayload": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass ScaledDotProductAttention(nn.Module):\n    def __init__(self, d_k: int):\n        super().__init__()\n        self.scale = 1.0 / (d_k ** 0.5)\n\n    def forward(self, Q, K, V, mask=None):\n        # Q, K, V: [batch, seq_len, d_k]\n        scores = torch.matmul(Q, K.transpose(-2, -1)) * self.scale\n        if mask is not None:\n            scores = scores.masked_fill(mask == 0, -1e9)\n        attn_weights = F.softmax(scores, dim=-1)\n        output = torch.matmul(attn_weights, V)\n        return output, attn_weights",
+        "languageOrConfig": "python",
+        "explanationNotes": "Notice the transpose of K on line 11 and the masked_fill for autoregressive decoding on line 13.",
+        "entryAnimationCue": "typewriter"
+      },
+      "checkpoint": {
+        "questionId": "q3",
+        "questionText": "In decoder self-attention, what is the purpose of the mask on line 13?",
+        "questionType": "mcq",
+        "options": [
+          {
+            "id": "A",
+            "text": "To prevent the model from attending to subsequent future tokens during autoregressive generation.",
+            "isCorrect": true,
+            "feedback": "Correct! Causal masking ensures causality in language generation."
+          },
+          {
+            "id": "B",
+            "text": "To drop negative attention weights.",
+            "isCorrect": false,
+            "feedback": "Softmax naturally bounds weights between 0 and 1, so negative weights don't exist."
+          },
+          {
+            "id": "C",
+            "text": "To speed up matrix multiplication by 50%.",
+            "isCorrect": false,
+            "feedback": "Masking doesn't speed up compute unless specialized sparse kernels are used."
+          }
+        ],
+        "expectedConcept": "Causal mask prevents attention to future tokens during generative decoding.",
+        "rubric": "Verify understanding of autoregressive causal masking."
+      }
+    }
+  ]
+}

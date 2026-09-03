@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LessonPlan",
+  "type": "object",
+  "required": ["topic", "studentLevel", "language", "totalEstimatedMinutes", "modules"],
+  "properties": {
+    "topic": { "type": "string" },
+    "studentLevel": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced"] },
+    "language": { "type": "string", "enum": ["English", "Hindi", "Hinglish", "Spanish"] },
+    "totalEstimatedMinutes": { "type": "integer" },
+    "pedagogicalGoals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["moduleId", "title", "estimatedMinutes", "teachingScript", "visualAction", "checkpoint"],
+        "properties": {
+          "moduleId": { "type": "string" },
+          "title": { "type": "string" },
+          "estimatedMinutes": { "type": "integer" },
+          "teachingScript": { "type": "string" },
+          "visualAction": {
+            "type": "object",
+            "required": ["type", "rawPayload"],
+            "properties": {
+              "type": { "type": "string", "enum": ["katex", "mermaid", "code", "chart", "callout"] },
+              "title": { "type": "string" },
+              "rawPayload": { "type": "string" },
+              "languageOrConfig": { "type": "string" },
+              "explanationNotes": { "type": "string" },
+              "entryAnimationCue": { "type": "string" }
+            }
+          },
+          "checkpoint": {
+            "type": "object",
+            "required": ["questionId", "questionText", "questionType", "expectedConcept", "rubric"],
+            "properties": {
+              "questionId": { "type": "string" },
+              "questionText": { "type": "string" },
+              "questionType": { "type": "string", "enum": ["mcq", "explain_in_own_words"] },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "text", "isCorrect"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "text": { "type": "string" },
+                    "isCorrect": { "type": "boolean" },
+                    "feedback": { "type": "string" }
+                  }
+                }
+              },
+              "expectedConcept": { "type": "string" },
+              "rubric": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
