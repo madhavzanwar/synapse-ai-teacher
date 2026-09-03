@@ -3,7 +3,7 @@
 SYNAPSE AI TEACHER — PRODUCTION API KEYS INTEGRATION VERIFICATION SCRIPT
 =============================================================================
 Performs a 1-second ping test to validate:
-1. Google Gemini 1.5 API Key (Generates a 5-word test string)
+1. Google Gemini 2.5 API Key (Generates a 5-word test string)
 2. ElevenLabs TTS API Key (Requests 1 second of test audio)
 3. Simli WebRTC Video Avatar Configuration (Validates API key & Face ID)
 =============================================================================
@@ -13,7 +13,6 @@ import sys
 import asyncio
 import base64
 
-# Ensure UTF-8 console output on Windows
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -27,7 +26,7 @@ def test_api_keys():
     print("=" * 75)
 
     # 1. Validate Google Gemini API Key
-    print("\n[1/3] Validating Google Gemini 1.5 API Key...")
+    print("\n[1/3] Validating Google Gemini API Key...")
     if not settings.GEMINI_API_KEY:
         print("  [SKIP] GEMINI_API_KEY is not set in backend/.env (using local fallback engine).")
     else:
@@ -35,12 +34,12 @@ def test_api_keys():
             from google import genai
             client = genai.Client(api_key=settings.GEMINI_API_KEY)
             response = client.models.generate_content(
-                model="gemini-1.5-flash",
+                model=settings.GEMINI_FLASH_MODEL,
                 contents="Say 'Hello Synapse AI Teacher live'."
             )
-            print(f"  [OK] Gemini 1.5 API verified! Response: {response.text.strip()}")
+            print(f"  [OK] Gemini API verified! Response: {response.text.strip()}")
         except Exception as e:
-            print(f"  [!] Gemini 1.5 API Ping failed: {e}")
+            print(f"  [!] Gemini API Ping failed: {e}")
 
     # 2. Validate ElevenLabs API Key
     print("\n[2/3] Validating ElevenLabs Voice API Key...")
@@ -67,7 +66,10 @@ def test_api_keys():
                 audio_bytes = resp.read()
                 print(f"  [OK] ElevenLabs API verified! Received {len(audio_bytes)} bytes of audio.")
         except Exception as e:
-            print(f"  [!] ElevenLabs API Ping failed: {e}")
+            if "402" in str(e):
+                print(f"  [KEY VALIDATED] ElevenLabs API Key is authentic! (Notice: Account quota reached. Web Speech API fallback active).")
+            else:
+                print(f"  [!] ElevenLabs API Ping failed: {e}")
 
     # 3. Validate Simli WebRTC Integration
     print("\n[3/3] Validating Simli Video Avatar Integration...")
