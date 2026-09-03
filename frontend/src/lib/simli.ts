@@ -1,110 +1,92 @@
 /**
- * Simli WebRTC Video Avatar Client Helper.
- * Establishes WebRTC video stream with Simli's API and attaches video track.
+ * Simli WebRTC Video Avatar Client using the official `simli-client` SDK.
  */
+import { SimliClient as SimliSDKClient, generateSimliSessionToken, generateIceServers, LogLevel } from 'simli-client';
 
 export interface SimliSessionConfig {
   apiKey?: string;
   faceId?: string;
   videoElement: HTMLVideoElement;
-  audioElement?: HTMLAudioElement;
+  audioElement: HTMLAudioElement;
 }
 
-export class SimliClient {
+export class SimliClientManager {
   private apiKey: string;
   private faceId: string;
   private videoElement: HTMLVideoElement;
-  private pc: RTCPeerConnection | null = null;
+  private audioElement: HTMLAudioElement;
+  private client: SimliSDKClient | null = null;
 
   constructor(config: SimliSessionConfig) {
     this.apiKey = config.apiKey || process.env.NEXT_PUBLIC_SIMLI_API_KEY || '';
     this.faceId = config.faceId || process.env.NEXT_PUBLIC_SIMLI_FACE_ID || 'cace3ef7-a4c4-425d-a8cf-a5358eb0c427';
     this.videoElement = config.videoElement;
+    this.audioElement = config.audioElement;
   }
 
   async start(): Promise<boolean> {
     if (!this.apiKey) {
-      console.warn('Simli API Key is not set in environment.');
+      console.warn('Simli API Key is not configured in environment.');
       return false;
     }
 
     try {
-      console.log('Initializing Simli WebRTC session for face:', this.faceId);
-      const response = await fetch('https://api.simli.ai/startAudioToVideoSession', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiKey: this.apiKey,
+      console.log('Generating Simli session token for face:', this.faceId);
+      const tokenResponse = await generateSimliSessionToken({
+        apiKey: this.apiKey,
+        config: {
           faceId: this.faceId,
           handleSilence: true,
           maxSessionLength: 600,
           maxIdleTime: 120,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Simli session start failed:', response.status, errorText);
+      if (!tokenResponse?.session_token) {
+        console.error('Failed to get session token from Simli.');
         return false;
       }
 
-      const data = await response.json();
-      const { session_token } = data;
+      console.log('Simli session token received. Generating ICE servers...');
+      const iceServers = await generateIceServers(this.apiKey).catch(() => null);
 
-      if (!session_token) {
-        console.error('No session token returned from Simli API');
-        return false;
-      }
+      console.log('Starting official Simli SDK Client...');
+      this.client = new SimliSDKClient(
+        tokenResponse.session_token,
+        this.videoElement,
+        this.audioElement,
+        iceServers,
+        LogLevel.INFO
+      );
 
-      // Initialize RTCPeerConnection
-      this.pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      this.client.on('start', () => {
+        console.log('Simli avatar stream started successfully!');
       });
 
-      this.pc.ontrack = (event) => {
-        if (event.track.kind === 'video' && this.videoElement) {
-          console.log('Simli video track received!');
-          this.videoElement.srcObject = event.streams[0];
-          this.videoElement.play().catch((e) => console.log('Video autoplay:', e));
-        }
-      };
-
-      // Create WebRTC Offer
-      this.pc.addTransceiver('video', { direction: 'recvonly' });
-      this.pc.addTransceiver('audio', { direction: 'recvonly' });
-
-      const offer = await this.pc.createOffer();
-      await this.pc.setLocalDescription(offer);
-
-      // Exchange SDP with Simli WebRTC gateway
-      const sdpResponse = await fetch(`https://api.simli.ai/sdp/${session_token}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sdp: offer.sdp, type: offer.type }),
+      this.client.on('error', (err: string) => {
+        console.error('Simli avatar error:', err);
       });
 
-      if (!sdpResponse.ok) {
-        console.error('Simli SDP exchange failed');
-        return false;
-      }
+      this.client.on('startup_error', (msg: string) => {
+        console.error('Simli avatar startup error:', msg);
+      });
 
-      const answer = await sdpResponse.json();
-      await this.pc.setRemoteDescription(new RTCSessionDescription(answer));
-
-      console.log('Simli WebRTC Avatar session connected successfully!');
+      await this.client.start();
       return true;
     } catch (err) {
-      console.error('Simli WebRTC error:', err);
+      console.error('Simli SDK start error:', err);
       return false;
     }
   }
 
   stop() {
-    if (this.pc) {
-      this.pc.close();
-      this.pc = null;
+    if (this.client) {
+      try {
+        this.client.stop();
+      } catch (e) {
+        console.warn('Simli stop error:', e);
+      }
+      this.client = null;
     }
   }
 }

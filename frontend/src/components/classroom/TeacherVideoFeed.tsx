@@ -1,22 +1,19 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Volume2,
   VolumeX,
   Sparkles,
   Hand,
-  MessageSquare,
-  Radio,
   Globe,
   Video,
-  VideoOff,
   User,
 } from 'lucide-react';
 import { parseEmotionFromScript } from '@/lib/utils';
 import { LanguageCode } from '@/types';
-import { SimliClient } from '@/lib/simli';
+import { SimliClientManager } from '@/lib/simli';
 
 interface TeacherVideoFeedProps {
   script: string;
@@ -49,11 +46,11 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const simliClientRef = useRef<SimliClient | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const simliClientRef = useRef<SimliClientManager | null>(null);
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Auto-connect to Simli WebRTC Avatar if NEXT_PUBLIC_SIMLI_API_KEY is present
+  // Toggle official Simli WebRTC Video Avatar
   const handleToggleSimliAvatar = async () => {
     if (webRtcActive) {
       if (simliClientRef.current) {
@@ -64,21 +61,27 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
       return;
     }
 
-    if (!videoRef.current) return;
+    if (!videoRef.current || !audioRef.current) return;
     setIsSimliConnecting(true);
 
-    const client = new SimliClient({
-      videoElement: videoRef.current,
-    });
-    simliClientRef.current = client;
+    try {
+      const client = new SimliClientManager({
+        videoElement: videoRef.current,
+        audioElement: audioRef.current,
+      });
+      simliClientRef.current = client;
 
-    const success = await client.start();
-    setIsSimliConnecting(false);
+      const success = await client.start();
+      setIsSimliConnecting(false);
 
-    if (success) {
-      setWebRtcActive(true);
-    } else {
-      console.warn('Could not start Simli avatar stream, using 2D canvas fallback.');
+      if (success) {
+        setWebRtcActive(true);
+      } else {
+        alert('Simli WebRTC Avatar is initializing. If your free trial limit is reached on Simli, the interactive 2D canvas teacher avatar is active.');
+      }
+    } catch (err) {
+      console.error('Simli toggle error:', err);
+      setIsSimliConnecting(false);
     }
   };
 
@@ -96,11 +99,9 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
     // If backend sent synthesized Base64 audio, play via HTML5 Audio
     if (audioBase64 && !isMuted) {
       if (audioRef.current) {
-        audioRef.current.pause();
+        audioRef.current.src = `data:audio/mp3;base64,${audioBase64}`;
+        audioRef.current.play().catch((e) => console.log('Audio autoplay prevented:', e));
       }
-      const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
-      audioRef.current = audio;
-      audio.play().catch((e) => console.log('Audio autoplay prevented:', e));
       return;
     }
 
@@ -288,6 +289,9 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
     <div
       className={`relative flex flex-col h-full rounded-2xl liquid-glass ${shadowGlowClass} overflow-hidden transition-all duration-300`}
     >
+      {/* Hidden Audio Element for WebRTC / TTS streams */}
+      <audio ref={audioRef} autoPlay playsInline className="hidden" />
+
       {/* Top Header Controls */}
       <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
         <div className="flex items-center gap-2">
