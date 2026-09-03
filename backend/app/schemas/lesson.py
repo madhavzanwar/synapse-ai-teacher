@@ -4,7 +4,12 @@ Covers StudentProfile, LessonPlan, VisualActions, DiagnosticEvaluations, and Liv
 """
 from enum import Enum
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+
+
+def to_camel(string: str) -> str:
+    components = string.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
 
 
 class EducationalLevel(str, Enum):
@@ -75,7 +80,7 @@ class EventType(str, Enum):
 
 
 # ---------------------------------------------------------------------------
-# Core Data Models
+# Core Data Models with Flexible Alias Support (camelCase & snake_case)
 # ---------------------------------------------------------------------------
 
 class StudentProfile(BaseModel):
@@ -106,16 +111,11 @@ class StudentProfile(BaseModel):
         description="List of document IDs uploaded for grounding."
     )
 
-    model_config = ConfigDict(extra="ignore", json_schema_extra={
-        "example": {
-            "target_topic": "Attention Mechanism in Transformers",
-            "educational_level": "Intermediate",
-            "language": "Hinglish",
-            "available_time_minutes": "20",
-            "learning_style": "visual-intuitive",
-            "uploaded_document_ids": []
-        }
-    })
+    model_config = ConfigDict(
+        populate_by_name=True,
+        alias_generator=to_camel,
+        extra="ignore"
+    )
 
 
 class VisualAction(BaseModel):
@@ -145,12 +145,16 @@ class VisualAction(BaseModel):
         description="Animation style: fade-slide | typewriter | step-reveal | pulse"
     )
 
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
+
 
 class CheckpointOption(BaseModel):
     id: str = Field(..., description="Option identifier, e.g., 'A', 'B', 'C', 'D'")
     text: str = Field(..., description="Text of the option.")
     is_correct: bool = Field(default=False, description="Whether this is the correct answer.")
     feedback: Optional[str] = Field(default="", description="Specific diagnostic feedback if this option is chosen.")
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
 
 
 class Checkpoint(BaseModel):
@@ -169,10 +173,12 @@ class Checkpoint(BaseModel):
         ...,
         description="The core conceptual truth or principle the student should grasp."
     )
-    rubric: str = Field(
-        ...,
+    rubric: Optional[str] = Field(
+        default="",
         description="Rubric for evaluating open-ended answers and identifying common cognitive pitfalls."
     )
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
 
 
 class LessonModule(BaseModel):
@@ -193,13 +199,15 @@ class LessonModule(BaseModel):
         description="Interactive question assessing the module's core idea."
     )
 
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
+
 
 class LessonPlan(BaseModel):
     """The complete structured curriculum created by the LangGraph curriculum planner."""
-    topic: str = Field(..., description="Main topic.")
-    student_level: EducationalLevel = Field(..., description="Target proficiency level.")
-    language: LanguageCode = Field(..., description="Language of instruction.")
-    total_estimated_minutes: int = Field(..., description="Sum of module durations.")
+    topic: str = Field(default="Attention Mechanism in Transformers", description="Main topic.")
+    student_level: EducationalLevel = Field(default=EducationalLevel.BEGINNER, description="Target proficiency level.")
+    language: LanguageCode = Field(default=LanguageCode.HINGLISH, description="Language of instruction.")
+    total_estimated_minutes: int = Field(default=20, description="Sum of module durations.")
     pedagogical_goals: List[str] = Field(
         default_factory=list,
         description="Key high-level outcomes the student will master."
@@ -208,6 +216,15 @@ class LessonPlan(BaseModel):
         ...,
         description="Sequential list of lesson modules."
     )
+
+    @field_validator("topic", mode="before")
+    @classmethod
+    def convert_topic(cls, v: Any, info: Any) -> str:
+        if not v and isinstance(info.data, dict) and "title" in info.data:
+            return info.data["title"]
+        return str(v or "Attention Mechanism in Transformers")
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
 
 
 class StudentResponse(BaseModel):
@@ -219,6 +236,8 @@ class StudentResponse(BaseModel):
     written_explanation: Optional[str] = None
     audio_transcript: Optional[str] = None
 
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
+
 
 class DiagnosticEvaluation(BaseModel):
     """Deep cognitive evaluation of a student's answer with remedial strategy if incorrect."""
@@ -228,84 +247,107 @@ class DiagnosticEvaluation(BaseModel):
         default=None,
         description="Explicit description of the flawed mental model or misconception detected, or null if correct."
     )
-    root_cause: str = Field(
+    root_cause: Optional[str] = Field(
         default="",
-        description="Why the student might hold this misconception based on cognitive heuristics or knowledge gaps."
+        description="Underlying cognitive reason for the misconception."
     )
-    corrective_strategy: CorrectiveStrategy = Field(
+    corrective_strategy: Optional[CorrectiveStrategy] = Field(
         default=CorrectiveStrategy.SIMPLER_ANALOGY,
-        description="Strategy to remediate: simpler_analogy | first_principles | visual_counterexample | step_by_step_breakdown"
+        description="Pedagogical strategy for remediation."
     )
-    re_explanation_script: str = Field(
+    re_explanation_script: Optional[str] = Field(
         default="",
-        description="Warm, empathetic teacher voice script directly resolving the misconception without shaming the student."
+        description="Conversational teacher speech explaining or praising."
+    )
+    remedial_teaching_script: Optional[str] = Field(
+        default="",
+        description="Empathetic, targeted corrective speech script."
     )
     re_explanation_visual: Optional[VisualAction] = Field(
         default=None,
-        description="Tailored visual (analogy diagram, counterexample code, or simplified formula) targeting the root cause."
+        description="Visual action artifact for re-explanation or whiteboard."
+    )
+    remedial_visual_action: Optional[VisualAction] = Field(
+        default=None,
+        description="Targeted visual artifact for blackboard."
     )
     follow_up_prompt: Optional[str] = Field(
         default="",
-        description="A short follow-up check question to verify the student grasped the re-explanation."
+        description="Follow-up prompt."
     )
     follow_up_checkpoint: Optional[Checkpoint] = Field(
         default=None,
-        description="Calibrated verification check question."
+        description="Immediate follow-up inquiry to verify the student's revised mental model."
     )
-    is_frustrated: bool = Field(
+    is_frustrated: Optional[bool] = Field(
         default=False,
-        description="True if student expressed confusion, frustration, or cognitive fatigue."
+        description="Whether student is experiencing frustration."
     )
-    sentiment_score: float = Field(
+    sentiment_score: Optional[float] = Field(
         default=0.0,
-        description="Sentiment score from -1.0 (very frustrated) to +1.0 (confident/positive)."
+        description="Student sentiment score from -1.0 to 1.0."
     )
-    is_emotional_intervention: bool = Field(
+    is_emotional_intervention: Optional[bool] = Field(
         default=False,
-        description="True if an emotional reassurance intervention was triggered."
+        description="Whether emotional intervention was triggered for frustration."
     )
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
+
+
+class RemedialAction(BaseModel):
+    strategy: CorrectiveStrategy = CorrectiveStrategy.SIMPLER_ANALOGY
+    identified_misconception: Optional[str] = None
+    root_cause: Optional[str] = ""
+    re_explanation_script: Optional[str] = ""
+    remedial_teaching_script: Optional[str] = ""
+    re_explanation_visual: Optional[VisualAction] = None
+    remedial_visual_action: Optional[VisualAction] = None
+    follow_up_checkpoint: Optional[Checkpoint] = None
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
 
 
 class ModuleMasteryRecord(BaseModel):
     module_id: str
-    title: str
+    title: Optional[str] = ""
     attempts_count: int = 1
     passed: bool = True
     score: float = 1.0
     misconceptions_encountered: List[str] = Field(default_factory=list)
 
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
+
+
+class ConceptScore(BaseModel):
+    subject: str
+    score: float
+    fullMark: float = 100.0
+
 
 class MasteryReport(BaseModel):
-    """Final mastery certificate and diagnostic report generated upon lesson conclusion."""
+    """Comprehensive end-of-lesson mastery certificate and knowledge analytics."""
     session_id: str
     topic: str
-    overall_mastery_percentage: float = Field(..., ge=0.0, le=100.0)
-    summary_feedback: str
+    overall_mastery_percentage: float
+    concept_breakdown: List[ConceptScore] = Field(default_factory=list)
     strengths: List[str] = Field(default_factory=list)
     areas_for_review: List[str] = Field(default_factory=list)
-    concept_breakdown: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="Dimensional mastery breakdown for Knowledge Radar Chart (e.g. subject, score, fullMark)."
-    )
-    actionable_next_steps: List[str] = Field(
-        default_factory=list,
-        description="Concrete, actionable follow-up learning milestones."
-    )
-    module_records: List[ModuleMasteryRecord] = Field(default_factory=list)
+    summary_feedback: str
+    actionable_next_steps: List[str] = Field(default_factory=list)
     recommended_next_topics: List[str] = Field(default_factory=list)
-    developer_watermark: str = Field(
-        default="Developed by Madhav Zanwar (madhav_builds) — AIML Student | Problem Solver | Tech Enthusiast",
-        description="Developer portfolio attribution."
-    )
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
 
 
 class ClassroomEvent(BaseModel):
-    """Real-time event payload pushed over WebSocket or SSE to the client."""
+    """WebSocket event payload emitted across the classroom connection."""
     event_type: EventType
     session_id: str
-    module_id: Optional[str] = None
+    timestamp: Optional[str] = None
     data: Dict[str, Any] = Field(default_factory=dict)
-    timestamp: float = Field(default_factory=lambda: 0.0)
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
 
 
 class ClassroomSessionCreateRequest(BaseModel):
@@ -313,85 +355,68 @@ class ClassroomSessionCreateRequest(BaseModel):
     document_content_override: Optional[str] = None
 
 
-class RemedialAction(BaseModel):
-    """Encapsulates the full remedial intervention when a misconception is detected."""
-    strategy: CorrectiveStrategy = Field(..., description="The chosen corrective strategy.")
-    identified_misconception: Optional[str] = Field(default=None, description="The specific flawed mental model.")
-    root_cause: str = Field(default="", description="Why the misconception occurred.")
-    re_explanation_script: str = Field(..., description="Empathetic conversational teacher speech.")
-    re_explanation_visual: Optional[VisualAction] = Field(default=None, description="Tailored whiteboard visual artifact.")
-    follow_up_checkpoint: Optional[Checkpoint] = Field(default=None, description="Calibrated verification check question.")
-    is_emotional_intervention: bool = Field(default=False, description="True if emotional reassurance intervention.")
-
-
-class EvaluateResponseRequest(BaseModel):
-    session_id: str
-    module_id: str
-    question_id: str
-    response_text: Optional[str] = None
-    selected_option_id: Optional[str] = None
-    response_time_seconds: Optional[float] = None
-
-
-class SwitchLanguageRequest(BaseModel):
-    session_id: str
-    new_language: LanguageCode
-
-
-class InterruptRequest(BaseModel):
-    session_id: str
-    student_query: Optional[str] = None
-
-
 class ClassroomSessionState(BaseModel):
     session_id: str
     profile: StudentProfile
     lesson_plan: Optional[LessonPlan] = None
     current_module_index: int = 0
-    current_state: str = "INITIAL"
-    grounding_context: str = ""
-    history_events: List[ClassroomEvent] = Field(default_factory=list)
+    current_language: LanguageCode = LanguageCode.HINGLISH
+    is_teacher_speaking: bool = False
+    is_remediating: bool = False
     mastery_report: Optional[MasteryReport] = None
 
 
-# ---------------------------------------------------------------------------
-# Phase 5: Multi-Day Study Planner & Learning Path Schemas
-# ---------------------------------------------------------------------------
-
 class LearningPathNode(BaseModel):
-    """A milestone node in a multi-day learning roadmap / skill tree."""
-    node_id: str = Field(..., description="Unique ID for this roadmap node (e.g. node-day-1)")
-    title: str = Field(..., description="Milestone topic title")
-    description: str = Field(..., description="Concise overview of what will be mastered")
-    day_number: int = Field(default=1, description="Target day number in the study timeframe")
-    sequence_index: int = Field(default=0, description="0-indexed order in the path")
-    estimated_minutes: int = Field(default=20, description="Estimated time to complete")
-    is_unlocked: bool = Field(default=False, description="True if student is eligible to begin this module")
-    is_completed: bool = Field(default=False, description="True if completed with verified mastery")
-    prerequisites: List[str] = Field(default_factory=list, description="List of prerequisite node_ids")
-    target_concepts: List[str] = Field(default_factory=list, description="Key concepts tested")
-    curriculum_payload: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Payload ready to pass to create_classroom_session"
-    )
+    node_id: str
+    day_number: int
+    title: str
+    description: str
+    estimated_minutes: int = 20
+    is_unlocked: bool = False
+    is_completed: bool = False
+    target_concepts: List[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
 
 
 class StudyPlan(BaseModel):
-    """Complete multi-day structured learning path."""
-    plan_id: str = Field(..., description="Unique ID for the study plan")
-    user_id: str = Field(default="default_user", description="Owner user ID")
-    target_topic: str = Field(..., description="Broad subject area")
-    timeframe: str = Field(default="7_days", description="Duration (e.g. 7_days, 14_days)")
-    total_days: int = Field(default=7, description="Number of days")
-    student_level: EducationalLevel = Field(default=EducationalLevel.BEGINNER)
-    nodes: List[LearningPathNode] = Field(default_factory=list, description="Sequential roadmap milestones")
-    created_at: float = Field(default_factory=lambda: 0.0)
+    plan_id: str
+    user_id: str = "default_user"
+    target_topic: str
+    timeframe: str = "7_days"
+    total_days: int = 7
+    created_at: Union[str, float, int] = ""
+    nodes: List[LearningPathNode] = Field(default_factory=list)
+
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def convert_created_at(cls, v: Any) -> str:
+        return str(v)
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
 
 
 class GenerateStudyPlanRequest(BaseModel):
     target_topic: str
     timeframe: str = "7_days"
-    educational_level: EducationalLevel = EducationalLevel.BEGINNER
-    language: LanguageCode = LanguageCode.ENGLISH
-    user_id: str = "default_user"
+    educational_level: Optional[EducationalLevel] = EducationalLevel.INTERMEDIATE
+    language: Optional[LanguageCode] = LanguageCode.ENGLISH
+    user_id: Optional[str] = "default_user"
 
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel, extra="ignore")
+
+
+class DocumentChunk(BaseModel):
+    chunk_id: str
+    document_id: str
+    content: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    vector_embedding: Optional[List[float]] = None
+
+
+class DocumentMetadata(BaseModel):
+    document_id: str
+    filename: str
+    file_type: str
+    upload_timestamp: str
+    chunk_count: int
