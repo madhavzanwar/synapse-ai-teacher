@@ -50,21 +50,21 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
   const mermaidRef = useRef<HTMLDivElement>(null);
   const whiteboardContainerRef = useRef<HTMLDivElement>(null);
 
-  // Initialize Mermaid with Velorah midnight navy palette
+  // Initialize Mermaid with Academic Light palette
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
-      theme: 'dark',
+      theme: 'default',
       securityLevel: 'loose',
       themeVariables: {
-        darkMode: true,
+        darkMode: false,
         background: 'transparent',
-        primaryColor: 'rgba(255, 255, 255, 0.08)',
-        primaryTextColor: '#F8FAFC',
-        primaryBorderColor: 'rgba(255, 255, 255, 0.25)',
-        lineColor: 'rgba(255, 255, 255, 0.4)',
-        secondaryColor: 'rgba(255, 255, 255, 0.05)',
-        tertiaryColor: 'rgba(255, 255, 255, 0.02)',
+        primaryColor: '#f1f5f9',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#cbd5e1',
+        lineColor: '#64748b',
+        secondaryColor: '#ffffff',
+        tertiaryColor: '#f8fafc',
       },
     });
   }, []);
@@ -96,7 +96,7 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
         } catch (err) {
           console.error('Mermaid rendering error:', err);
           if (mermaidRef.current) {
-            mermaidRef.current.innerHTML = `<pre class="text-rose-300 p-4 font-mono text-sm">${visualAction.raw_payload}</pre>`;
+            mermaidRef.current.innerHTML = `<pre class="text-rose-600 p-4 font-mono text-sm">${visualAction.raw_payload}</pre>`;
           }
         }
       };
@@ -145,16 +145,16 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
   const getVisualIcon = (type?: VisualType) => {
     switch (type) {
       case 'katex':
-        return <Sigma className="w-4 h-4 text-neutral-200" />;
+        return <Sigma className="w-4 h-4 text-slate-700" />;
       case 'mermaid':
-        return <GitGraph className="w-4 h-4 text-neutral-200" />;
+        return <GitGraph className="w-4 h-4 text-slate-700" />;
       case 'code':
-        return <Code2 className="w-4 h-4 text-neutral-200" />;
+        return <Code2 className="w-4 h-4 text-slate-700" />;
       case 'chart':
-        return <BarChart3 className="w-4 h-4 text-neutral-200" />;
+        return <BarChart3 className="w-4 h-4 text-slate-700" />;
       case 'callout':
       default:
-        return <Lightbulb className="w-4 h-4 text-neutral-200" />;
+        return <Lightbulb className="w-4 h-4 text-slate-700" />;
     }
   };
 
@@ -172,28 +172,28 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
       ref={whiteboardContainerRef}
       className={`relative flex flex-col h-full rounded-2xl liquid-glass ${
         isRemediating
-          ? 'shadow-[0_0_30px_rgba(245,158,11,0.2)]'
-          : 'shadow-[0_0_30px_rgba(255,255,255,0.08)]'
+          ? 'shadow-[0_8px_30px_rgba(245,158,11,0.2)] border-amber-300/80'
+          : 'shadow-[0_4px_24px_-8px_rgba(0,0,0,0.08)]'
       } overflow-hidden transition-all duration-300`}
     >
       {/* Header bar */}
-      <div className="flex items-center justify-between px-5 py-3.5 bg-white/[0.02] border-b border-white/[0.06] backdrop-blur-md z-10">
+      <div className="flex items-center justify-between px-5 py-3.5 bg-white/60 border-b border-slate-200/80 backdrop-blur-md z-10 text-slate-900">
         <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08]">
+          <div className="p-1.5 rounded-lg bg-slate-100 border border-slate-200">
             {getVisualIcon(visualAction?.type)}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-medium text-white tracking-wide font-['Inter']">
+              <h2 className="text-sm font-medium text-slate-900 tracking-wide font-['Inter']">
                 {visualAction?.title || topicTitle}
               </h2>
               {isRemediating && (
-                <span className="px-2 py-0.5 text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full animate-pulse">
+                <span className="px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-800 border border-amber-200 rounded-full animate-pulse">
                   Remediation Focus
                 </span>
               )}
             </div>
-            <p className="text-xs text-neutral-400 font-light capitalize">
+            <p className="text-xs text-slate-500 font-light capitalize">
               Smart Whiteboard · {visualAction?.type || 'Overview'} Mode
             </p>
           </div>
@@ -205,16 +205,16 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
             <>
               <button
                 onClick={handleCopyCode}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors shadow-sm"
                 title="Copy code"
               >
-                {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? 'Copied' : 'Copy'}
               </button>
               <button
                 onClick={handleSimulateCodeRun}
                 disabled={isExecutingCode}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white liquid-glass rounded-lg transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-all disabled:opacity-50 shadow-sm"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
                 {isExecutingCode ? 'Running...' : 'Run Simulation'}
@@ -224,7 +224,7 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
 
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors"
+            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
             title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -233,7 +233,7 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
       </div>
 
       {/* Main Canvas Area */}
-      <div className="relative flex-1 flex flex-col p-6 overflow-auto">
+      <div className="relative flex-1 flex flex-col p-6 overflow-auto bg-white/40">
         <AnimatePresence mode="wait">
           {!visualAction ? (
             <motion.div
@@ -241,13 +241,13 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="flex-1 flex flex-col items-center justify-center text-center text-neutral-500 font-light"
+              className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 font-light"
             >
-              <div className="w-14 h-14 mb-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-neutral-300">
+              <div className="w-14 h-14 mb-4 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
                 <Sparkles className="w-7 h-7 animate-pulse" />
               </div>
-              <h3 className="text-base font-['Instrument_Serif'] text-white mb-1">Whiteboard Ready</h3>
-              <p className="text-xs max-w-sm text-neutral-400 font-light">
+              <h3 className="text-base font-['Instrument_Serif'] text-slate-900 mb-1">Whiteboard Ready</h3>
+              <p className="text-xs max-w-sm text-slate-500 font-light">
                 Your AI Teacher will render formulas, architectural diagrams, and code execution right here.
               </p>
             </motion.div>
@@ -258,12 +258,12 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.3 }}
-              className="flex-1 flex flex-col items-center justify-center p-8 bg-white/[0.02] rounded-xl border border-white/[0.06] shadow-inner"
+              className="flex-1 flex flex-col items-center justify-center p-8 bg-white rounded-xl border border-slate-200/80 shadow-sm"
             >
-              <div className="w-full text-center overflow-x-auto py-6 text-[#F8FAFC]" ref={katexRef} />
+              <div className="w-full text-center overflow-x-auto py-6 text-slate-900" ref={katexRef} />
               {visualAction.explanation_notes && (
-                <div className="mt-6 max-w-2xl px-5 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-neutral-200 text-xs sm:text-sm text-center leading-relaxed font-light">
-                  <span className="font-medium text-white">Teacher Note: </span>
+                <div className="mt-6 max-w-2xl px-5 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm text-center leading-relaxed font-light">
+                  <span className="font-medium text-slate-900">Teacher Note: </span>
                   {visualAction.explanation_notes}
                 </div>
               )}
@@ -275,12 +275,12 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.3 }}
-              className="flex-1 flex flex-col items-center justify-center p-6 bg-white/[0.02] rounded-xl border border-white/[0.06] shadow-inner overflow-auto min-h-[350px]"
+              className="flex-1 flex flex-col items-center justify-center p-6 bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-auto min-h-[350px]"
             >
-              <div ref={mermaidRef} className="w-full flex justify-center py-4 [&_svg]:max-w-full [&_svg]:h-auto [&_text]:!fill-[#F8FAFC]" />
+              <div ref={mermaidRef} className="w-full flex justify-center py-4 [&_svg]:max-w-full [&_svg]:h-auto [&_text]:!fill-slate-900" />
               {visualAction.explanation_notes && (
-                <div className="mt-4 max-w-2xl px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-neutral-300 text-xs sm:text-sm text-center leading-relaxed font-light">
-                  <span className="font-medium text-white">Architecture Insight: </span>
+                <div className="mt-4 max-w-2xl px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm text-center leading-relaxed font-light">
+                  <span className="font-medium text-slate-900">Architecture Insight: </span>
                   {visualAction.explanation_notes}
                 </div>
               )}
@@ -292,13 +292,13 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="flex-1 flex flex-col rounded-xl overflow-hidden border border-white/[0.08] liquid-glass-subtle"
+              className="flex-1 flex flex-col rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm"
             >
               <div className="flex-1 min-h-[300px]">
                 <Editor
                   height="100%"
                   language={visualAction.language_or_config || 'python'}
-                  theme="vs-dark"
+                  theme="vs-light"
                   value={visualAction.raw_payload}
                   options={{
                     readOnly: true,
@@ -318,9 +318,9 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
-                  className="bg-black/80 border-t border-white/[0.08] p-4 font-mono text-xs text-emerald-300 whitespace-pre-wrap leading-relaxed"
+                  className="bg-slate-900 border-t border-slate-800 p-4 font-mono text-xs text-emerald-400 whitespace-pre-wrap leading-relaxed"
                 >
-                  <div className="flex items-center gap-2 mb-1.5 text-neutral-400 font-medium uppercase tracking-wider text-[10px]">
+                  <div className="flex items-center gap-2 mb-1.5 text-slate-400 font-medium uppercase tracking-wider text-[10px]">
                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                     Simulated Console Output
                   </div>
@@ -334,25 +334,25 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
-              className="flex-1 flex flex-col p-4 bg-white/[0.02] rounded-xl border border-white/[0.06] min-h-[350px]"
+              className="flex-1 flex flex-col p-4 bg-white rounded-xl border border-slate-200/80 shadow-sm min-h-[350px]"
             >
               <div className="flex-1 w-full h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={sampleChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-                    <XAxis dataKey="step" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="step" stroke="#64748b" />
+                    <YAxis stroke="#64748b" />
                     <Tooltip
-                      contentStyle={{ backgroundColor: 'hsl(201,100%,13%)', borderColor: 'rgba(255,255,255,0.15)', borderRadius: '12px', color: '#fff' }}
+                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderRadius: '12px', color: '#0f172a' }}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="loss" stroke="#f43f5e" strokeWidth={2} name="Training Loss" />
-                    <Line type="monotone" dataKey="accuracy" stroke="#10b981" strokeWidth={2} name="Validation Accuracy" />
+                    <Line type="monotone" dataKey="loss" stroke="#e11d48" strokeWidth={2} name="Training Loss" />
+                    <Line type="monotone" dataKey="accuracy" stroke="#059669" strokeWidth={2} name="Validation Accuracy" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
               {visualAction.explanation_notes && (
-                <div className="mt-4 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-neutral-200 text-xs sm:text-sm text-center font-light">
+                <div className="mt-4 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm text-center font-light">
                   {visualAction.explanation_notes}
                 </div>
               )}
@@ -363,18 +363,18 @@ export const SmartWhiteboard: React.FC<SmartWhiteboardProps> = ({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="flex-1 flex flex-col items-center justify-center p-8 bg-white/[0.02] rounded-xl border border-white/[0.06]"
+              className="flex-1 flex flex-col items-center justify-center p-8 bg-white rounded-xl border border-slate-200/80 shadow-sm"
             >
-              <div className="max-w-xl w-full p-6 rounded-2xl liquid-glass-subtle shadow-xl">
-                <div className="flex items-center gap-3 mb-4 text-white">
-                  <Lightbulb className="w-5 h-5" />
-                  <h3 className="text-base font-['Instrument_Serif'] text-white">{visualAction.title || 'Core Principle'}</h3>
+              <div className="max-w-xl w-full p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="flex items-center gap-3 mb-4 text-slate-900">
+                  <Lightbulb className="w-5 h-5 text-amber-500" />
+                  <h3 className="text-base font-['Instrument_Serif'] text-slate-900">{visualAction.title || 'Core Principle'}</h3>
                 </div>
-                <div className="text-neutral-300 text-sm leading-relaxed font-light whitespace-pre-wrap">
+                <div className="text-slate-700 text-sm leading-relaxed font-light whitespace-pre-wrap">
                   {visualAction.raw_payload}
                 </div>
                 {visualAction.explanation_notes && (
-                  <div className="mt-4 pt-4 border-t border-white/[0.06] text-xs text-neutral-400 italic">
+                  <div className="mt-4 pt-4 border-t border-slate-200 text-xs text-slate-500 italic">
                     💡 {visualAction.explanation_notes}
                   </div>
                 )}

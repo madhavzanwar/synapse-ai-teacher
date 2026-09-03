@@ -161,7 +161,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden">
+    <div className="dark-hero relative min-h-screen flex flex-col overflow-hidden bg-[hsl(201,100%,13%)] text-white">
       {/* ─── Fullscreen Looping Background Video ─── */}
       <video
         autoPlay
@@ -185,16 +185,16 @@ export default function HomePage() {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
-          <Link href="/classroom" className="text-sm text-neutral-400 hover:text-white transition-colors tracking-wide">
+          <Link href="/classroom" className="text-sm text-neutral-300 hover:text-white transition-colors tracking-wide">
             Curriculum
           </Link>
-          <Link href="/classroom" className="text-sm text-neutral-400 hover:text-white transition-colors tracking-wide">
+          <Link href="/classroom" className="text-sm text-neutral-300 hover:text-white transition-colors tracking-wide">
             Studio
           </Link>
-          <Link href="/dashboard" className="text-sm text-neutral-400 hover:text-white transition-colors tracking-wide">
+          <Link href="/dashboard" className="text-sm text-neutral-300 hover:text-white transition-colors tracking-wide">
             Diagnostics
           </Link>
-          <Link href="/dashboard" className="text-sm text-neutral-400 hover:text-white transition-colors tracking-wide">
+          <Link href="/dashboard" className="text-sm text-neutral-300 hover:text-white transition-colors tracking-wide">
             Telemetry
           </Link>
         </div>
@@ -228,10 +228,10 @@ export default function HomePage() {
         </button>
       </main>
 
-      {/* ─── Footer Watermark ─── */}
+      {/* ─── Clean Footer ─── */}
       <footer className="relative z-10 py-6 text-center">
-        <p className="font-['Inter'] text-xs uppercase tracking-[0.2em] text-neutral-500">
-          Developed by Madhav Zanwar (madhav_builds) — AIML Student · Problem Solver · Tech Enthusiast
+        <p className="font-['Inter'] text-xs uppercase tracking-[0.2em] text-neutral-400/60">
+          Synapse® Multimodal Pedagogical Engine
         </p>
       </footer>
 

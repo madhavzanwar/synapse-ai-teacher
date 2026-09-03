@@ -3,12 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  GraduationCap,
   Clock,
   Globe,
   Award,
   ChevronRight,
-  Home,
   CheckCircle,
 } from 'lucide-react';
 import { LessonPlan } from '@/types';
@@ -44,24 +42,25 @@ export const ClassroomHeader: React.FC<ClassroomHeaderProps> = ({
   };
 
   const totalModules = lessonPlan?.modules.length || 1;
-  const progressPercentage = Math.round(((currentModuleIndex + 1) / totalModules) * 100);
 
   return (
-    <header className="flex items-center justify-between px-6 py-3.5 bg-white/[0.02] border-b border-white/[0.06] backdrop-blur-xl z-20">
-      {/* ── Left: Brand + Topic ── */}
+    <header className="flex items-center justify-between px-6 py-3.5 bg-white/80 border-b border-slate-200/80 backdrop-blur-md z-20 text-slate-900">
+      {/* Left: Brand & Topic */}
       <div className="flex items-center gap-4">
-        <Link href="/" className="flex items-center gap-2.5 text-neutral-100 hover:text-white transition-colors group">
-          <span className="font-['Instrument_Serif'] text-xl text-white tracking-tight">Synapse</span>
+        <Link href="/" className="flex items-center gap-1 group">
+          <span className="font-['Instrument_Serif'] text-2xl tracking-tight text-slate-900 group-hover:text-slate-700 transition-colors">
+            Synapse<sup className="text-[10px]">®</sup>
+          </span>
         </Link>
 
-        <div className="h-5 w-px bg-white/[0.08]" />
+        <div className="h-4 w-px bg-slate-200" />
 
         <div className="flex items-center gap-2 max-w-md truncate">
-          <span className="text-xs font-['Inter'] font-medium text-neutral-300 truncate">{topic}</span>
+          <span className="text-xs font-medium text-slate-700 truncate font-['Inter']">{topic}</span>
         </div>
       </div>
 
-      {/* ── Center: Module Step Timeline ── */}
+      {/* Center: Module Step Progress Timeline */}
       <div className="hidden md:flex items-center gap-3">
         <div className="flex items-center gap-1.5">
           {lessonPlan?.modules.map((m, idx) => {
@@ -69,51 +68,51 @@ export const ClassroomHeader: React.FC<ClassroomHeaderProps> = ({
             const isCurrent = idx === currentModuleIndex;
             return (
               <React.Fragment key={m.module_id}>
-                <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-['Inter'] font-medium transition-all ${
-                  isCurrent
-                    ? 'bg-white/10 border border-white/20 text-white ring-1 ring-white/10'
-                    : isDone
-                    ? 'bg-white/[0.05] border border-white/[0.1] text-emerald-300'
-                    : 'bg-white/[0.03] border border-white/[0.06] text-neutral-500'
-                }`}>
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all ${
+                    isCurrent
+                      ? 'bg-slate-900 border border-slate-900 text-white font-medium shadow-sm'
+                      : isDone
+                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium'
+                      : 'bg-slate-100 border border-slate-200 text-slate-400 font-light'
+                  }`}
+                >
                   {isDone ? (
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
                   ) : (
-                    <span className="text-[11px] font-bold">{idx + 1}</span>
+                    <span className="text-[11px] font-mono font-medium">{idx + 1}</span>
                   )}
                   <span className="max-w-[120px] truncate">{m.title}</span>
                 </div>
-                {idx < totalModules - 1 && (
-                  <ChevronRight className="w-3.5 h-3.5 text-white/20" />
-                )}
+                {idx < totalModules - 1 && <ChevronRight className="w-3.5 h-3.5 text-slate-300" />}
               </React.Fragment>
             );
           })}
         </div>
       </div>
 
-      {/* ── Right: Badges + Timer + Dashboard ── */}
-      <div className="flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg liquid-glass-subtle text-neutral-300 text-xs font-['Inter']">
-          <Globe className="w-3.5 h-3.5 text-neutral-400" />
+      {/* Right: Badges & Live Timer */}
+      <div className="flex items-center gap-3 font-['Inter']">
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-xs font-light">
+          <Globe className="w-3.5 h-3.5 text-slate-500" />
           <span>{language}</span>
         </div>
 
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg liquid-glass-subtle text-neutral-300 text-xs font-['Inter']">
-          <Award className="w-3.5 h-3.5 text-neutral-400" />
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-xs font-light">
+          <Award className="w-3.5 h-3.5 text-slate-500" />
           <span>{level}</span>
         </div>
 
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg liquid-glass-subtle text-neutral-200 text-xs font-mono">
-          <Clock className="w-3.5 h-3.5 text-neutral-400" />
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-mono font-medium">
+          <Clock className="w-3.5 h-3.5 text-slate-500" />
           <span>{formatTime(elapsedSeconds)}</span>
         </div>
 
         <Link
           href="/dashboard"
-          className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-neutral-300 hover:text-white text-xs font-['Inter'] font-medium transition-colors"
+          className="flex items-center gap-1.5 px-4 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors"
         >
-          <Award className="w-3.5 h-3.5 text-neutral-400" />
+          <Award className="w-3.5 h-3.5 text-slate-300" />
           <span>Dashboard</span>
         </Link>
       </div>

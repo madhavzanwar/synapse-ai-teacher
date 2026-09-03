@@ -1,32 +1,39 @@
 @import "tailwindcss";
 
 /* =========================================================================
-   SYNAPSE AI TEACHER — VELORAH DESIGN SYSTEM TOKENS
+   SYNAPSE AI TEACHER — ACADEMIC LIGHT THEME TOKENS & DESIGN SYSTEM
    ========================================================================= */
 
 @layer base {
   :root {
+    --background: 0 0% 98%; /* Clean off-white #FAFAFA */
+    --foreground: 222 47% 11%; /* Deep Slate #0F172A */
+    --muted-foreground: 215 16% 47%; /* Slate 500 #64748B */
+    --primary: 222 47% 11%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --muted: 210 40% 96.1%;
+    --accent: 210 40% 96.1%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 47% 11%;
+
     --font-display: 'Instrument Serif', Georgia, serif;
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-
-    --background: hsl(201, 100%, 13%);
-    --background-raw: 201 100% 13%;
-    --foreground: hsl(0, 0%, 100%);
-    --muted-foreground: hsl(215, 20%, 65%);
-    --primary: hsl(0, 0%, 100%);
-    --primary-foreground: hsl(201, 100%, 13%);
-    --secondary: hsl(201, 50%, 18%);
-    --muted: hsl(201, 40%, 16%);
-    --accent: hsl(201, 60%, 22%);
-    --border: hsl(201, 30%, 24%);
-    --input: hsl(201, 30%, 24%);
-    --ring: hsl(0, 0%, 100%);
   }
 }
 
+/* Scoped Dark Theme for the Cinematic Landing Page */
+.dark-hero {
+  --background: 201 100% 13%;
+  --foreground: 0 0% 100%;
+  --muted-foreground: 215 20% 65%;
+  --border: 201 30% 24%;
+}
+
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   font-family: var(--font-body);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -34,23 +41,45 @@ body {
 }
 
 /* =========================================================================
-   SPECULAR LIQUID GLASS MATERIAL
+   LIQUID GLASS MATERIALS (ADAPTIVE LIGHT & DARK)
    ========================================================================= */
 
 .liquid-glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.08);
+}
+
+.liquid-glass-subtle {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.liquid-glass-strong {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.12);
+}
+
+/* Dark-hero liquid glass overrides */
+.dark-hero .liquid-glass {
   background: rgba(255, 255, 255, 0.02);
   background-blend-mode: luminosity;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: none;
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.15),
-    0 20px 40px -15px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 20px 40px -15px rgba(0, 0, 0, 0.5);
   position: relative;
   overflow: hidden;
 }
 
-.liquid-glass::before {
+.dark-hero .liquid-glass::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -70,27 +99,24 @@ body {
   pointer-events: none;
 }
 
-.liquid-glass-subtle {
+.dark-hero .liquid-glass-subtle {
   background: rgba(255, 255, 255, 0.015);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.liquid-glass-strong {
+.dark-hero .liquid-glass-strong {
   background: rgba(255, 255, 255, 0.04);
-  background-blend-mode: luminosity;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: none;
-  box-shadow:
-    inset 0 1px 2px rgba(255, 255, 255, 0.2),
-    0 24px 48px -16px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 24px 48px -16px rgba(0, 0, 0, 0.6);
   position: relative;
   overflow: hidden;
 }
 
-.liquid-glass-strong::before {
+.dark-hero .liquid-glass-strong::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -125,26 +151,21 @@ body {
   }
 }
 
-.animate-fade-rise {
-  animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.animate-fade-rise-delay {
-  animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
-}
-.animate-fade-rise-delay-2 {
-  animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
-}
-.animate-fade-rise-delay-3 {
-  animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
-}
+.animate-fade-rise { animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-fade-rise-delay { animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+.animate-fade-rise-delay-2 { animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both; }
 
 /* =========================================================================
-   KATEX STYLING (LUMINOUS FORMULAS)
+   KATEX MATH STYLING (LIGHT & DARK ACCORDINGLY)
    ========================================================================= */
 
 .katex {
   font-size: 1.35em !important;
-  color: #f8fafc;
+  color: #0f172a !important;
+}
+
+.dark-hero .katex {
+  color: #ffffff !important;
 }
 
 .katex-display {
@@ -155,7 +176,7 @@ body {
 }
 
 /* =========================================================================
-   CUSTOM SCROLLBARS (ETHEREAL)
+   CUSTOM SCROLLBARS
    ========================================================================= */
 
 ::-webkit-scrollbar {
@@ -166,16 +187,12 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.15);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(15, 23, 42, 0.3);
 }
-
-/* =========================================================================
-   TYPOGRAPHY UTILITY CLASSES
-   ========================================================================= */
 
 .font-display {
   font-family: var(--font-display);
@@ -185,7 +202,6 @@ body {
   font-family: var(--font-body);
 }
 
-/* Vignette overlay for video backgrounds */
 .vignette-overlay {
   background: radial-gradient(
     ellipse at center,
