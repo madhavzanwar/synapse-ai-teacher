@@ -67,7 +67,7 @@ export const ClassroomHeader: React.FC<ClassroomHeaderProps> = ({
             const isDone = idx < currentModuleIndex;
             const isCurrent = idx === currentModuleIndex;
             return (
-              <React.Fragment key={m.module_id}>
+              <React.Fragment key={m.module_id || `mod-${idx}`}>
                 <div
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all ${
                     isCurrent

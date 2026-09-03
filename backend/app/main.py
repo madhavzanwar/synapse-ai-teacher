@@ -545,9 +545,15 @@ async def classroom_websocket_endpoint(websocket: WebSocket, session_id: str):
     session = session_manager.get_session(session_id)
 
     if not session:
-        logger.warning(f"WebSocket rejected: session {session_id} not found")
-        await websocket.close(code=4004, reason="Session not found")
-        return
+        logger.info(f"Session {session_id} not found in memory, creating auto-session...")
+        from app.schemas.lesson import StudentProfile
+        default_profile = StudentProfile(
+            target_topic="Attention Mechanism in Transformers",
+            educational_level="Intermediate",
+            language="Hinglish",
+            available_time_minutes="20",
+        )
+        session = session_manager.create_session(default_profile, session_id=session_id)
 
     await session_manager.register_connection(session_id, websocket)
     logger.info(f"WebSocket connected for session: {session_id}")
