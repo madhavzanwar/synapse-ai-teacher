@@ -12,9 +12,11 @@ import {
   Globe,
   Video,
   VideoOff,
+  User,
 } from 'lucide-react';
 import { parseEmotionFromScript } from '@/lib/utils';
 import { LanguageCode } from '@/types';
+import { SimliClient } from '@/lib/simli';
 
 interface TeacherVideoFeedProps {
   script: string;
@@ -42,11 +44,43 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
   >('enthusiastic');
   const [audioWaves, setAudioWaves] = useState<number[]>([15, 25, 45, 60, 30, 75, 40, 20]);
   const [webRtcActive, setWebRtcActive] = useState(false);
+  const [isSimliConnecting, setIsSimliConnecting] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const simliClientRef = useRef<SimliClient | null>(null);
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Auto-connect to Simli WebRTC Avatar if NEXT_PUBLIC_SIMLI_API_KEY is present
+  const handleToggleSimliAvatar = async () => {
+    if (webRtcActive) {
+      if (simliClientRef.current) {
+        simliClientRef.current.stop();
+        simliClientRef.current = null;
+      }
+      setWebRtcActive(false);
+      return;
+    }
+
+    if (!videoRef.current) return;
+    setIsSimliConnecting(true);
+
+    const client = new SimliClient({
+      videoElement: videoRef.current,
+    });
+    simliClientRef.current = client;
+
+    const success = await client.start();
+    setIsSimliConnecting(false);
+
+    if (success) {
+      setWebRtcActive(true);
+    } else {
+      console.warn('Could not start Simli avatar stream, using 2D canvas fallback.');
+    }
+  };
 
   // Parse emotion and clean text from raw script
   useEffect(() => {
@@ -225,10 +259,6 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
 
   const isPraising = avatarEmotion === 'encouraging' && !isRemediating;
 
-  // Pedagogical drop-shadows on light theme:
-  // Teaching: shadow-[0_8px_30px_rgba(99,102,241,0.15)]
-  // Diagnosing: shadow-[0_8px_30px_rgba(245,158,11,0.2)]
-  // Praising: shadow-[0_8px_30px_rgba(16,185,129,0.2)]
   const shadowGlowClass = isRemediating
     ? 'shadow-[0_8px_30px_rgba(245,158,11,0.2)] border-amber-300'
     : isPraising
@@ -280,6 +310,27 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Simli WebRTC Video Avatar Toggle */}
+          <button
+            onClick={handleToggleSimliAvatar}
+            disabled={isSimliConnecting}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-all shadow-sm ${
+              webRtcActive
+                ? 'bg-slate-900 text-white border-slate-900'
+                : 'bg-white/80 hover:bg-white text-slate-700 border-slate-200'
+            }`}
+            title="Toggle Simli WebRTC Video Stream vs 2D Avatar"
+          >
+            {isSimliConnecting ? (
+              <div className="w-3 h-3 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+            ) : webRtcActive ? (
+              <Video className="w-3 h-3 text-emerald-400" />
+            ) : (
+              <User className="w-3 h-3 text-slate-500" />
+            )}
+            <span>{webRtcActive ? 'Simli Live' : 'Simli Stream'}</span>
+          </button>
+
           {/* Dynamic Language Switcher Pill */}
           <div className="relative">
             <button
@@ -320,29 +371,30 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
       </div>
 
       {/* Avatar Stage Canvas / Viewport */}
-      <div className="relative flex-1 flex items-center justify-center min-h-[200px]">
-        {webRtcActive ? (
-          <video
-            id="webrtc-avatar-video"
-            autoPlay
-            playsInline
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <canvas
-            ref={canvasRef}
-            width={360}
-            height={260}
-            className="w-full h-full object-cover"
-          />
-        )}
+      <div className="relative flex-1 flex items-center justify-center min-h-[200px] bg-slate-900 overflow-hidden">
+        {/* Simli WebRTC Video Stream Element */}
+        <video
+          ref={videoRef}
+          id="webrtc-avatar-video"
+          autoPlay
+          playsInline
+          className={`w-full h-full object-cover ${webRtcActive ? 'block' : 'hidden'}`}
+        />
+
+        {/* 2D Canvas Procedural Avatar Fallback */}
+        <canvas
+          ref={canvasRef}
+          width={360}
+          height={260}
+          className={`w-full h-full object-cover ${webRtcActive ? 'hidden' : 'block'}`}
+        />
 
         {/* Audio Spectrum Waveform Bar */}
         <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1 px-4 pointer-events-none">
           {audioWaves.map((height, idx) => (
             <motion.div
               key={idx}
-              className="w-1 rounded-full bg-slate-700"
+              className={`w-1 rounded-full ${webRtcActive ? 'bg-emerald-400' : 'bg-slate-700'}`}
               animate={{ height: `${Math.max(height * 0.35, 4)}px` }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             />
@@ -350,7 +402,7 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
         </div>
       </div>
 
-      {/* Closed-Caption Pill: bg-white/90 text-slate-900 border border-slate-200 */}
+      {/* Closed-Caption Pill */}
       <div className="p-3 bg-white/60 border-t border-slate-200/80 backdrop-blur-md">
         <div className="bg-white/90 border border-slate-200 rounded-xl p-3 shadow-sm max-h-24 overflow-y-auto">
           <p className="text-xs text-slate-900 font-['Inter'] font-light tracking-wide leading-relaxed text-center">
@@ -361,7 +413,7 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
         {/* Action Controls */}
         <div className="mt-2.5 pt-2 border-t border-slate-200 flex items-center justify-between">
           <span className="text-[11px] text-slate-500 font-light">
-            Engine: <span className="text-slate-900 font-medium">{audioBase64 ? 'ElevenLabs Sonic' : 'Neural Speech'}</span>
+            Engine: <span className="text-slate-900 font-medium">{webRtcActive ? 'Simli WebRTC Stream' : audioBase64 ? 'ElevenLabs Sonic' : 'Neural Speech'}</span>
           </span>
 
           <button
