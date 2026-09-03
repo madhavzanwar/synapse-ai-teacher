@@ -8,10 +8,6 @@ import {
   Play,
   Clock,
   Sparkles,
-  ChevronRight,
-  BookOpen,
-  Layers,
-  Award,
   ArrowUpRight,
   Compass,
 } from 'lucide-react';
@@ -30,9 +26,9 @@ export const RoadmapTree: React.FC<RoadmapTreeProps> = ({
 }) => {
   if (!studyPlan || !studyPlan.nodes || studyPlan.nodes.length === 0) {
     return (
-      <div className="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 text-center text-slate-400 text-xs">
-        <Compass className="w-8 h-8 text-indigo-400 mx-auto mb-2 opacity-60" />
-        No active study plan loaded. Generate an AI roadmap above to begin!
+      <div className="p-8 rounded-3xl liquid-glass-subtle text-center text-neutral-500 text-xs">
+        <Compass className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
+        No active study plan loaded. Generate an AI roadmap above to begin.
       </div>
     );
   }
@@ -44,37 +40,36 @@ export const RoadmapTree: React.FC<RoadmapTreeProps> = ({
   return (
     <div className="space-y-6">
       {/* Track Header & Progress Bar */}
-      <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="p-5 rounded-2xl liquid-glass-subtle flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              {studyPlan.timeframe.replace('_', ' ').toUpperCase()} TIMELINE
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] bg-white/[0.05] text-neutral-300 border border-white/[0.08]">
+              {studyPlan.timeframe.replace('_', ' ')} Timeline
             </span>
-            <span className="text-xs text-slate-400 font-mono">
-              {studyPlan.total_days} Days / {nodes.length} Milestones
+            <span className="text-xs text-neutral-500 font-mono">
+              {studyPlan.total_days} Days · {nodes.length} Milestones
             </span>
           </div>
-          <h3 className="text-base font-bold text-white">{studyPlan.target_topic}</h3>
+          <h3 className="text-base font-['Instrument_Serif'] text-white">{studyPlan.target_topic}</h3>
         </div>
 
-        {/* Progress Dial */}
         <div className="flex items-center gap-3 shrink-0">
           <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">
-              Curriculum Progress
+            <div className="text-[10px] uppercase tracking-[0.12em] font-medium text-neutral-500">
+              Progress
             </div>
-            <div className="text-sm font-bold text-emerald-400">
-              {completedCount} of {nodes.length} Mastered ({progressPercent}%)
+            <div className="text-sm font-medium text-neutral-200">
+              {completedCount} of {nodes.length} ({progressPercent}%)
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs">
+          <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-neutral-300 font-medium text-xs">
             {progressPercent}%
           </div>
         </div>
       </div>
 
       {/* Vertical Skill Tree Timeline */}
-      <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-[19px] sm:before:left-[27px] before:top-4 before:bottom-4 before:w-0.5 before:bg-gradient-to-b before:from-indigo-500 before:via-slate-800 before:to-slate-900">
+      <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-[19px] sm:before:left-[27px] before:top-4 before:bottom-4 before:w-px before:bg-gradient-to-b before:from-white/20 before:via-white/[0.06] before:to-transparent">
         <AnimatePresence>
           {nodes.map((node, index) => {
             const isCompleted = node.is_completed;
@@ -92,15 +87,15 @@ export const RoadmapTree: React.FC<RoadmapTreeProps> = ({
                 {/* Node Status Indicator Pin */}
                 <div className="relative z-10 -ml-6 sm:-ml-8 shrink-0">
                   {isCompleted ? (
-                    <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.35)]">
+                    <div className="w-9 h-9 rounded-full bg-white/[0.08] border border-white/20 flex items-center justify-center text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
                       <CheckCircle2 className="w-5 h-5" />
                     </div>
                   ) : isCurrent ? (
-                    <div className="w-9 h-9 rounded-2xl bg-indigo-600 border-2 border-indigo-300 flex items-center justify-center text-white shadow-[0_0_20px_rgba(99,102,241,0.5)] animate-pulse">
+                    <div className="w-9 h-9 rounded-full bg-white/10 border border-white/30 flex items-center justify-center text-white shadow-[0_0_20px_rgba(255,255,255,0.15)] animate-pulse">
                       <Play className="w-4 h-4 ml-0.5" />
                     </div>
                   ) : (
-                    <div className="w-9 h-9 rounded-2xl bg-slate-900 border-2 border-slate-700 flex items-center justify-center text-slate-500">
+                    <div className="w-9 h-9 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-neutral-600">
                       <Lock className="w-4 h-4" />
                     </div>
                   )}
@@ -108,64 +103,54 @@ export const RoadmapTree: React.FC<RoadmapTreeProps> = ({
 
                 {/* Milestone Content Card */}
                 <div
-                  className={`flex-1 p-5 rounded-3xl border transition-all duration-200 ${
+                  className={`flex-1 p-5 rounded-2xl transition-all duration-200 ${
                     isCompleted
-                      ? 'bg-slate-950/60 border-emerald-500/30'
+                      ? 'liquid-glass-subtle'
                       : isCurrent
-                      ? 'bg-gradient-to-r from-indigo-950/50 to-slate-900 border-indigo-500/60 ring-1 ring-indigo-500/30 shadow-xl shadow-indigo-950/40'
-                      : 'bg-slate-950/40 border-slate-800/80 opacity-60'
+                      ? 'liquid-glass-strong shadow-xl'
+                      : 'bg-white/[0.01] border border-white/[0.04] opacity-50'
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold font-mono ${
-                          isCompleted
-                            ? 'bg-emerald-500/20 text-emerald-300'
-                            : isCurrent
-                            ? 'bg-indigo-500/20 text-indigo-300'
-                            : 'bg-slate-800 text-slate-400'
-                        }`}
-                      >
-                        DAY {node.day_number} • STEP {index + 1}
+                      <span className="px-2.5 py-0.5 rounded-md text-[10px] font-medium font-mono bg-white/[0.05] text-neutral-400 border border-white/[0.06]">
+                        DAY {node.day_number} · STEP {index + 1}
                       </span>
-                      <span className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+                      <span className="flex items-center gap-1 text-[11px] text-neutral-500">
                         <Clock className="w-3 h-3" />
                         {node.estimated_minutes} min
                       </span>
                     </div>
 
-                    {/* Status Pill */}
                     <div>
                       {isCompleted ? (
-                        <span className="px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 bg-emerald-950/60 border border-emerald-500/40 rounded-full">
-                          Mastery Verified
+                        <span className="px-2.5 py-0.5 text-[10px] font-medium text-emerald-300 bg-white/[0.03] border border-white/[0.08] rounded-full">
+                          Mastered
                         </span>
                       ) : isCurrent ? (
-                        <span className="px-2.5 py-0.5 text-[10px] font-bold text-indigo-300 bg-indigo-950/60 border border-indigo-500/40 rounded-full flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-indigo-400" />
-                          Ready to Launch
+                        <span className="px-2.5 py-0.5 text-[10px] font-medium text-white bg-white/[0.06] border border-white/[0.12] rounded-full flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" />
+                          Ready
                         </span>
                       ) : (
-                        <span className="px-2.5 py-0.5 text-[10px] font-bold text-slate-500 bg-slate-900 border border-slate-800 rounded-full">
-                          Locked (Requires Step {index})
+                        <span className="px-2.5 py-0.5 text-[10px] font-medium text-neutral-600 bg-white/[0.02] border border-white/[0.04] rounded-full">
+                          Locked
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <h4 className="text-sm sm:text-base font-bold text-white mb-1.5">{node.title}</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-3.5">
+                  <h4 className="text-sm sm:text-base font-medium text-white mb-1.5">{node.title}</h4>
+                  <p className="text-xs text-neutral-400 leading-relaxed mb-3.5 font-light">
                     {node.description}
                   </p>
 
-                  {/* Target Concepts Pills */}
                   {node.target_concepts && node.target_concepts.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {node.target_concepts.map((concept, cIdx) => (
                         <span
                           key={cIdx}
-                          className="px-2 py-0.5 rounded-lg text-[10px] font-medium bg-slate-900 border border-slate-800 text-slate-300"
+                          className="px-2 py-0.5 rounded-full text-[10px] font-light bg-white/[0.03] border border-white/[0.06] text-neutral-400"
                         >
                           {concept}
                         </span>
@@ -173,28 +158,27 @@ export const RoadmapTree: React.FC<RoadmapTreeProps> = ({
                     </div>
                   )}
 
-                  {/* Action CTA Row */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
+                  <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
                     {isUnlocked ? (
                       <button
                         onClick={() => onLaunchNode(node)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-md shadow-indigo-950/50 group/btn"
+                        className="flex items-center gap-2 liquid-glass rounded-full px-5 py-2 text-xs font-medium text-white transition-transform hover:scale-[1.03] active:scale-[0.98] group/btn"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>{isCompleted ? 'Review Micro-Lesson' : 'Start Micro-Lesson'}</span>
+                        <span>{isCompleted ? 'Review' : 'Start Lesson'}</span>
                         <ArrowUpRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
                       </button>
                     ) : (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                      <div className="flex items-center gap-1.5 text-xs text-neutral-600 font-light">
                         <Lock className="w-3.5 h-3.5" />
-                        <span>Complete preceding milestone to unlock</span>
+                        <span>Complete preceding milestone</span>
                       </div>
                     )}
 
                     {onToggleComplete && isUnlocked && (
                       <button
                         onClick={() => onToggleComplete(node.node_id)}
-                        className="text-[11px] font-medium text-slate-400 hover:text-emerald-300 transition-colors"
+                        className="text-[11px] font-light text-neutral-500 hover:text-neutral-300 transition-colors"
                       >
                         {isCompleted ? 'Mark Incomplete' : 'Simulate Complete'}
                       </button>

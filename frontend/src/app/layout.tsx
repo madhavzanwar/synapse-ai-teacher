@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Synapse AI Teacher | Adaptive Multimodal Education',
-  description: 'Human-like AI Educator delivering personalized video lessons, smart blackboard visualizations, and Socratic diagnostic checkpoints.',
+  title: 'Synapse® — Autonomous AI Educator',
+  description: 'An atmospheric, cinematic AI teaching experience. Upload complex materials and enter adaptive, video-guided visual lectures that listen and evolve with you.',
 };
 
 export default function RootLayout({
@@ -13,7 +13,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className="antialiased bg-[#090d16] text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="antialiased min-h-screen selection:bg-white/20 selection:text-white">
         {children}
       </body>
     </html>

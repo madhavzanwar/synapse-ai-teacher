@@ -108,9 +108,9 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
       const width = canvas.width;
       const height = canvas.height;
 
-      // Dynamic glow tint based on pedagogical state
       const isPraising = avatarEmotion === 'encouraging' && !isRemediating;
-      
+
+      // Dark midnight navy canvas background gradient
       const bgGrad = ctx.createRadialGradient(
         width / 2,
         height * 0.45,
@@ -120,13 +120,13 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
         width * 0.7
       );
       if (isRemediating) {
-        bgGrad.addColorStop(0, '#1c1306');
+        bgGrad.addColorStop(0, '#1a140b');
       } else if (isPraising) {
-        bgGrad.addColorStop(0, '#061f14');
+        bgGrad.addColorStop(0, '#0a1a14');
       } else {
-        bgGrad.addColorStop(0, '#0f172a');
+        bgGrad.addColorStop(0, '#0c1722');
       }
-      bgGrad.addColorStop(1, '#050811');
+      bgGrad.addColorStop(1, '#000000');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
@@ -143,11 +143,11 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
       );
 
       if (isRemediating) {
-        haloGrad.addColorStop(0, 'rgba(245, 158, 11, 0.45)');
+        haloGrad.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
       } else if (isPraising) {
-        haloGrad.addColorStop(0, 'rgba(16, 185, 129, 0.45)');
+        haloGrad.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
       } else {
-        haloGrad.addColorStop(0, 'rgba(99, 102, 241, 0.35)');
+        haloGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
       }
       haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = haloGrad;
@@ -157,33 +157,31 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
       // Stylized Avatar Head
       ctx.beginPath();
       ctx.arc(width / 2, height * 0.42, 48, 0, Math.PI * 2);
-      ctx.fillStyle = '#1e293b';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.fill();
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 1.5;
       ctx.strokeStyle = isRemediating
-        ? '#f59e0b'
+        ? 'rgba(245, 158, 11, 0.6)'
         : isPraising
-        ? '#10b981'
-        : '#6366f1';
+        ? 'rgba(16, 185, 129, 0.6)'
+        : 'rgba(255, 255, 255, 0.3)';
       ctx.stroke();
 
       // Avatar Eyes
       const eyeOffset = Math.sin(phase * 1.5) * 1.5;
-      ctx.fillStyle = isPraising ? '#34d399' : '#38bdf8';
-      // Left eye
+      ctx.fillStyle = isPraising ? '#34d399' : '#f8fafc';
       ctx.beginPath();
-      ctx.arc(width / 2 - 16, height * 0.40 + eyeOffset, 4.5, 0, Math.PI * 2);
+      ctx.arc(width / 2 - 16, height * 0.40 + eyeOffset, 4, 0, Math.PI * 2);
       ctx.fill();
-      // Right eye
       ctx.beginPath();
-      ctx.arc(width / 2 + 16, height * 0.40 + eyeOffset, 4.5, 0, Math.PI * 2);
+      ctx.arc(width / 2 + 16, height * 0.40 + eyeOffset, 4, 0, Math.PI * 2);
       ctx.fill();
 
-      // Avatar Mouth (Lip-sync simulation when speaking)
+      // Avatar Mouth
       ctx.beginPath();
       const mouthOpen = isSpeaking ? Math.abs(Math.sin(phase * 6.5)) * 9 + 2 : 2;
-      ctx.ellipse(width / 2, height * 0.48, 10, mouthOpen, 0, 0, Math.PI * 2);
-      ctx.fillStyle = isRemediating ? '#f59e0b' : '#f43f5e';
+      ctx.ellipse(width / 2, height * 0.48, 9, mouthOpen, 0, 0, Math.PI * 2);
+      ctx.fillStyle = isRemediating ? '#f59e0b' : 'rgba(255, 255, 255, 0.8)';
       ctx.fill();
 
       // Shoulders / Torso
@@ -191,12 +189,12 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
       ctx.moveTo(width / 2 - 60, height);
       ctx.quadraticCurveTo(width / 2 - 40, height * 0.65, width / 2, height * 0.65);
       ctx.quadraticCurveTo(width / 2 + 40, height * 0.65, width / 2 + 60, height);
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
       ctx.fill();
-      ctx.strokeStyle = '#334155';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
       ctx.stroke();
 
-      // Waveform bars
+      // Waveform bars simulation
       if (isSpeaking) {
         setAudioWaves((prev) =>
           prev.map((_, i) => Math.floor(Math.sin(phase * 4 + i) * 35 + 45))
@@ -227,54 +225,54 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
     setIsMuted(!isMuted);
   };
 
+  const isPraising = avatarEmotion === 'encouraging' && !isRemediating;
+
+  // Velorah dynamic glowing dropshadows reacting to teacher state
+  const shadowGlowClass = isRemediating
+    ? 'shadow-[0_0_30px_rgba(245,158,11,0.2)]'
+    : isPraising
+    ? 'shadow-[0_0_30px_rgba(16,185,129,0.2)]'
+    : 'shadow-[0_0_30px_rgba(255,255,255,0.1)]';
+
   const getEmotionBadge = () => {
     switch (avatarEmotion) {
       case 'empathetic':
-        return { label: 'Empathetic Reassurance', color: 'bg-sky-500/20 text-sky-300 border-sky-500/40 animate-pulse' };
+        return { label: 'Empathetic', color: 'bg-white/[0.06] text-sky-200 border-white/[0.12]' };
       case 'enthusiastic':
-        return { label: 'Enthusiastic', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' };
+        return { label: 'Enthusiastic', color: 'bg-white/[0.06] text-emerald-200 border-white/[0.12]' };
       case 'thoughtful':
-        return { label: 'Thoughtful', color: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' };
+        return { label: 'Thoughtful', color: 'bg-white/[0.06] text-neutral-200 border-white/[0.12]' };
       case 'encouraging':
-        return { label: 'Encouraging', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' };
+        return { label: 'Encouraging', color: 'bg-white/[0.06] text-amber-200 border-white/[0.12]' };
       case 'curious':
-        return { label: 'Curious', color: 'bg-teal-500/20 text-teal-300 border-teal-500/30' };
+        return { label: 'Curious', color: 'bg-white/[0.06] text-teal-200 border-white/[0.12]' };
       default:
-        return { label: 'Engaged', color: 'bg-slate-500/20 text-slate-300 border-slate-500/30' };
+        return { label: 'Engaged', color: 'bg-white/[0.06] text-neutral-200 border-white/[0.12]' };
     }
   };
 
   const badge = getEmotionBadge();
 
-  // Dynamic Audio-Reactive Border Glow Class
-  const borderGlowClass = avatarEmotion === 'empathetic'
-    ? 'border-sky-400/80 shadow-[0_0_40px_rgba(56,189,248,0.5)] ring-1 ring-sky-400/50'
-    : isRemediating
-    ? 'border-amber-500/60 shadow-[0_0_35px_rgba(245,158,11,0.35)]'
-    : avatarEmotion === 'encouraging'
-    ? 'border-emerald-500/60 shadow-[0_0_35px_rgba(16,185,129,0.35)]'
-    : 'border-indigo-500/40 shadow-[0_0_35px_rgba(99,102,241,0.25)]';
-
   return (
     <div
-      className={`relative flex flex-col h-full rounded-2xl bg-slate-950 border ${borderGlowClass} overflow-hidden shadow-2xl transition-all duration-300`}
+      className={`relative flex flex-col h-full rounded-2xl liquid-glass ${shadowGlowClass} overflow-hidden transition-all duration-300`}
     >
       {/* Top Header Controls */}
       <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 backdrop-blur-md">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.1] backdrop-blur-md">
             <span
               className={`w-2 h-2 rounded-full ${
-                isSpeaking ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'
+                isSpeaking ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-500'
               }`}
             />
-            <span className="text-[11px] font-semibold text-slate-200">
+            <span className="text-[11px] font-medium text-white tracking-wide">
               {isSpeaking ? 'Synapse Live' : 'Listening'}
             </span>
           </div>
 
           <span
-            className={`px-2 py-0.5 text-[10px] font-medium rounded-full border backdrop-blur-md ${badge.color}`}
+            className={`px-2.5 py-0.5 text-[10px] font-medium rounded-full border backdrop-blur-md ${badge.color}`}
           >
             {badge.label}
           </span>
@@ -285,15 +283,15 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[11px] transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-neutral-200 text-[11px] transition-colors"
               title="Switch Instruction Language"
             >
-              <Globe className="w-3 h-3 text-indigo-400" />
+              <Globe className="w-3 h-3 text-neutral-300" />
               <span>{language}</span>
             </button>
 
             {showLanguageMenu && (
-              <div className="absolute right-0 mt-1 w-28 bg-slate-900 border border-slate-700 rounded-xl shadow-xl overflow-hidden z-30">
+              <div className="absolute right-0 mt-1 w-28 liquid-glass-strong border border-white/[0.1] rounded-xl shadow-xl overflow-hidden z-30">
                 {(['English', 'Hindi', 'Hinglish', 'Spanish'] as LanguageCode[]).map((lang) => (
                   <button
                     key={lang}
@@ -301,7 +299,7 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
                       if (onSwitchLanguage) onSwitchLanguage(lang);
                       setShowLanguageMenu(false);
                     }}
-                    className="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-indigo-600 hover:text-white transition-colors"
+                    className="w-full text-left px-3 py-1.5 text-xs text-neutral-300 hover:bg-white/10 hover:text-white transition-colors font-light"
                   >
                     {lang}
                   </button>
@@ -312,16 +310,16 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
 
           <button
             onClick={toggleMute}
-            className="p-1.5 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-neutral-300 hover:text-white transition-colors"
             title={isMuted ? 'Unmute' : 'Mute'}
           >
-            {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5" />}
+            {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-300" /> : <Volume2 className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
 
-      {/* Avatar Stage Canvas / WebRTC Viewport */}
-      <div className="relative flex-1 flex items-center justify-center min-h-[220px]">
+      {/* Avatar Stage Canvas / Viewport */}
+      <div className="relative flex-1 flex items-center justify-center min-h-[200px]">
         {webRtcActive ? (
           <video
             id="webrtc-avatar-video"
@@ -339,17 +337,11 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
         )}
 
         {/* Audio Spectrum Waveform Bar */}
-        <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-1 px-4 pointer-events-none">
+        <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1 px-4 pointer-events-none">
           {audioWaves.map((height, idx) => (
             <motion.div
               key={idx}
-              className={`w-1 rounded-full ${
-                isRemediating
-                  ? 'bg-amber-400'
-                  : avatarEmotion === 'encouraging'
-                  ? 'bg-emerald-400'
-                  : 'bg-indigo-400'
-              }`}
+              className="w-1 rounded-full bg-white/60"
               animate={{ height: `${Math.max(height * 0.35, 4)}px` }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             />
@@ -357,30 +349,25 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
         </div>
       </div>
 
-      {/* Synchronized Closed Caption Drawer */}
-      <div className="p-4 bg-slate-900/95 border-t border-slate-800 backdrop-blur-md">
-        <div className="flex items-start gap-2.5">
-          <div className="p-1 rounded bg-indigo-950/80 text-indigo-400 border border-indigo-500/30 shrink-0 mt-0.5">
-            <MessageSquare className="w-3.5 h-3.5" />
-          </div>
-          <div className="flex-1 max-h-24 overflow-y-auto pr-1">
-            <p className="text-xs text-slate-200 leading-relaxed font-sans">
-              {displayedCaption || 'Preparing personalized lesson delivery...'}
-            </p>
-          </div>
+      {/* Centered Semi-Transparent Liquid-Glass Subtitles Pill */}
+      <div className="p-3 bg-white/[0.02] border-t border-white/[0.06] backdrop-blur-md">
+        <div className="liquid-glass-subtle rounded-xl p-3 max-h-24 overflow-y-auto">
+          <p className="text-xs text-neutral-200 font-['Inter'] font-light tracking-wide leading-relaxed text-center">
+            {displayedCaption || 'Preparing personalized lesson delivery...'}
+          </p>
         </div>
 
-        {/* Interactive Hand-raise Action */}
-        <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between">
-          <span className="text-[11px] text-slate-400">
-            TTS Mode: <span className="text-indigo-400 font-medium">{audioBase64 ? 'ElevenLabs Sonic' : 'Neural Web Voice'}</span>
+        {/* Action Controls */}
+        <div className="mt-2.5 pt-2 border-t border-white/[0.04] flex items-center justify-between">
+          <span className="text-[11px] text-neutral-500 font-light">
+            Engine: <span className="text-neutral-300">{audioBase64 ? 'ElevenLabs Sonic' : 'Neural Speech'}</span>
           </span>
 
           <button
             onClick={onInterrupt}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-neutral-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] transition-colors"
           >
-            <Hand className="w-3.5 h-3.5 text-amber-400" />
+            <Hand className="w-3.5 h-3.5 text-neutral-300" />
             Raise Hand
           </button>
         </div>
