@@ -149,6 +149,9 @@ stateDiagram-v2
 ## ✨ Key Capabilities & Deep Dives
 
 ### 1. 📚 Multimodal RAG Document Grounding
+
+![Synapse Multi-Modal RAG Knowledge Grounding Pipeline](public/rag-pipeline-flowchart.png)
+
 - Ingests **PDFs, DOCX, PPTX, Markdown, and text notes**.
 - Multi-column layout parser preserves mathematical formulations and converts raw notation into standard LaTeX expressions.
 - **Hybrid Search Strategy**: Reciprocal Rank Fusion ($k=60$) combining:
