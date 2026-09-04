@@ -1,7 +1,8 @@
 /**
  * Simli WebRTC Video Avatar Client using the official `simli-client` SDK.
+ * Uses dynamic import() to avoid webpack compilation failure — the simli-client
+ * package has a broken dist/index.js that references a missing './Client' module.
  */
-import { SimliClient as SimliSDKClient, LogLevel } from 'simli-client';
 import { createSimliSession } from '@/lib/api';
 
 export interface SimliSessionConfig {
@@ -10,6 +11,9 @@ export interface SimliSessionConfig {
   videoElement: HTMLVideoElement;
   audioElement: HTMLAudioElement;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SimliSDKClient = any;
 
 export class SimliClientManager {
   private videoElement: HTMLVideoElement;
@@ -24,6 +28,14 @@ export class SimliClientManager {
 
   async start(): Promise<boolean> {
     try {
+      // Dynamically import simli-client at runtime only (client-side)
+      const simliModule = await import('simli-client').catch(() => null);
+      if (!simliModule) {
+        console.warn('simli-client module could not be loaded. Using canvas fallback.');
+        return false;
+      }
+      const { SimliClient: SimliSDKClientClass, LogLevel } = simliModule;
+
       console.log('Requesting backend-minted Simli session.');
       const tokenResponse = await createSimliSession();
 
@@ -37,7 +49,7 @@ export class SimliClientManager {
         : [{ urls: ['stun:stun.l.google.com:19302'] }];
 
       console.log('Starting official Simli SDK Client...');
-      this.client = new SimliSDKClient(
+      this.client = new SimliSDKClientClass(
         tokenResponse.session_token,
         this.videoElement,
         this.audioElement,
