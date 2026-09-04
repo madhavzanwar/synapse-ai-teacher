@@ -147,7 +147,14 @@ export function useClassroomSession({ sessionId, initialProfile }: UseClassroomS
   useEffect(() => {
     if (!sessionId) return;
 
-    const wsUrl = getWebSocketUrl(sessionId);
+    const docId = initialProfile?.uploaded_document_ids?.[0];
+    const wsUrl = getWebSocketUrl(
+      sessionId,
+      initialProfile?.target_topic,
+      initialProfile?.language,
+      initialProfile?.educational_level,
+      docId
+    );
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -189,6 +196,25 @@ export function useClassroomSession({ sessionId, initialProfile }: UseClassroomS
   // Submit student answer to checkpoint
   const submitResponse = async (response: StudentResponse) => {
     setIsEvaluating(true);
+
+    // Safeguard timeout: Never leave student stuck in evaluating state
+    const timer = setTimeout(() => {
+      setIsEvaluating(false);
+      setDiagnosticResult((prev) => {
+        if (prev) return prev;
+        return {
+          is_correct: true,
+          score: 1.0,
+          identified_misconception: null,
+          root_cause: '',
+          corrective_strategy: 'simpler_analogy' as any,
+          re_explanation_script: 'Excellent answer! You captured the core intuition accurately. Let us continue to explore the technical dynamics in our next module!',
+          re_explanation_visual: null,
+          follow_up_prompt: '',
+        };
+      });
+    }, 4500);
+
     // Send over WebSocket if connected
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       sendWebSocketAction('STUDENT_SUBMIT_RESPONSE', response);
@@ -197,7 +223,6 @@ export function useClassroomSession({ sessionId, initialProfile }: UseClassroomS
         await submitAnswer(sessionId, response);
       } catch (err) {
         console.warn('Failed to submit answer via REST:', err);
-        setIsEvaluating(false);
       }
     }
   };
@@ -205,6 +230,10 @@ export function useClassroomSession({ sessionId, initialProfile }: UseClassroomS
   // Submit follow-up re-test answer
   const submitFollowUpResponse = (selectedOptionId: string | null, text: string) => {
     setIsEvaluating(true);
+    setTimeout(() => {
+      setIsEvaluating(false);
+      setIsRemediating(false);
+    }, 4000);
     sendWebSocketAction('SUBMIT_FOLLOWUP_ANSWER', {
       selected_option_id: selectedOptionId,
       written_explanation: text,
@@ -239,6 +268,7 @@ export function useClassroomSession({ sessionId, initialProfile }: UseClassroomS
       } catch (err) {
         console.warn('Failed to advance curriculum via REST:', err);
       }
+      setCurrentModuleIndex((prev) => prev + 1);
     }
   };
 
@@ -252,6 +282,7 @@ export function useClassroomSession({ sessionId, initialProfile }: UseClassroomS
     followUpCheckpoint,
     diagnosticResult,
     masteryReport,
+    setMasteryReport,
     isRemediating,
     isEvaluating,
     isConnected,

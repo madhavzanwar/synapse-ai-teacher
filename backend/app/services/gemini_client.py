@@ -9,8 +9,7 @@ import logging
 import re
 from typing import Any, Dict, Optional
 
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
 from app.config import settings
 
@@ -25,19 +24,27 @@ def generate_json(
     temperature: float = 0.3,
     caller: str = "Gemini",
 ) -> Optional[Dict[str, Any]]:
-    """Return parsed JSON from Gemini, or None when unavailable/unparseable."""
+    """Generate JSON response using Google Gemini.
+
+    This uses the google-generativeai library's GenerativeModel API.
+    If the API key is missing or the call fails, None is returned.
+    """
     if not settings.GEMINI_API_KEY:
         return None
-
     try:
-        client = genai.Client(api_key=settings.GEMINI_API_KEY)
-        response = client.models.generate_content(
-            model=model_name or settings.GEMINI_FLASH_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction or None,
-                response_mime_type="application/json",
+        # Configure the client with the API key
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        # Create the model with system instruction (default to flash model if not provided)
+        model = genai.GenerativeModel(
+            model_name or settings.GEMINI_FLASH_MODEL,
+            system_instruction=system_instruction or None
+        )
+        # Generate content
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
                 temperature=temperature,
+                response_mime_type="application/json",
             ),
         )
         text = (response.text or "").strip()

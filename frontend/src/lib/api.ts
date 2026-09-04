@@ -157,8 +157,20 @@ export async function completeRoadmapNode(planId: string, nodeId: string) {
   return res.json();
 }
 
-export function getWebSocketUrl(sessionId: string): string {
+export function getWebSocketUrl(
+  sessionId: string,
+  topic?: string,
+  lang?: string,
+  level?: string,
+  docId?: string
+): string {
   const wsProto = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
   const host = process.env.NEXT_PUBLIC_WS_HOST || "localhost:8000";
-  return `${wsProto}//${host}/ws/classroom/${sessionId}`;
+  const params = new URLSearchParams();
+  if (topic) params.set("topic", topic);
+  if (lang) params.set("lang", lang);
+  if (level) params.set("level", level);
+  if (docId) params.set("doc_id", docId);
+  const qs = params.toString();
+  return `${wsProto}//${host}/ws/classroom/${sessionId}${qs ? `?${qs}` : ""}`;
 }

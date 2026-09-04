@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import re
-from typing import Dict, Any, List, Optional, TypedDict, Annotated
+from typing import Dict, Any, List, Optional, TypedDict, Annotated, Tuple
 
 from app.config import settings
 from app.services.gemini_client import generate_json
@@ -106,13 +106,260 @@ def _call_gemini_json(prompt: str, system_instruction: str = "") -> Optional[Dic
 # Fallback Intelligent Curriculum & Evaluation Generators (Mock / Offline)
 # ---------------------------------------------------------------------------
 
+def _clean_grounding_text(context: str) -> str:
+    """Strips source reference citations, UUIDs, file paths, and raw markdown noise from grounding context."""
+    if not context:
+        return ""
+    # Strip markdown source reference headers e.g. ### [Source Reference 1 | 9338054a..._file.pdf | Page X - Section: 'Y']
+    cleaned = re.sub(r"###\s*\[Source Reference[^\]]+\]", "", context)
+    cleaned = re.sub(r"\[Source Reference[^\]]+\]", "", cleaned)
+    # Strip UUID strings (e.g. 9338054a-7b3f-4e0e-8f92-c2889ba06b0d)
+    cleaned = re.sub(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_?", "", cleaned, flags=re.IGNORECASE)
+    # Strip file extensions like .pdf, .docx, .txt
+    cleaned = re.sub(r"\b[\w\-]+\.(pdf|docx|pptx|txt|md)\b", "", cleaned, flags=re.IGNORECASE)
+    # Remove excessive horizontal rules and section dashes
+    cleaned = re.sub(r"-{3,}", "\n", cleaned)
+    # Remove empty bracket residues
+    cleaned = re.sub(r"\[\s*\]", "", cleaned)
+    # Normalize whitespace
+    cleaned = re.sub(r"[ \t]+", " ", cleaned)
+    cleaned = re.sub(r"\n\s*\n\s*\n+", "\n\n", cleaned)
+    return cleaned.strip()
+
+
+def _detect_math_worksheet(text: str, topic: str) -> Tuple[bool, List[Tuple[int, int]]]:
+    """Detects if document or topic represents an arithmetic/multiplication worksheet and extracts problems."""
+    combined = (topic + " " + text[:2500]).lower()
+    has_keywords = any(
+        kw in combined
+        for kw in ["multiplication", "multiply", "times table", "times-table", "worksheet", "product", "math"]
+    )
+    # Extract multiplication pairs like "4 x 6", "7 * 8", "3 × 5", "6 x 7 = 42"
+    pairs: List[Tuple[int, int]] = []
+    matches = re.findall(r"\b([1-9]\d?)\s*[x*×]\s*([1-9]\d?)\b", text)
+    for a, b in matches:
+        try:
+            val_a, val_b = int(a), int(b)
+            if 1 <= val_a <= 25 and 1 <= val_b <= 25:
+                if (val_a, val_b) not in pairs:
+                    pairs.append((val_a, val_b))
+        except ValueError:
+            pass
+
+    is_math = has_keywords or len(pairs) >= 2
+    return is_math, pairs
+
+
 def _generate_mock_curriculum(profile: StudentProfile, grounding_context: str) -> LessonPlan:
-    """High-quality fallback curriculum generator tailored to the student's topic and language."""
+    """High-quality fallback curriculum generator tailored to the student's topic, uploaded document, and language."""
     topic = profile.target_topic
     lang = profile.language
     level = profile.educational_level
 
-    # Topic-specific adaptive templates
+    # 1. If Grounding Context from an uploaded PDF/document is present, build modules from the document!
+    if grounding_context and len(grounding_context.strip()) > 20:
+        cleaned_doc = _clean_grounding_text(grounding_context)
+        is_math, math_pairs = _detect_math_worksheet(cleaned_doc, topic)
+
+        # Detect human-friendly topic name
+        doc_topic = topic
+        if not doc_topic or doc_topic.strip().lower() in ["attention mechanism in transformers", "default", "uploaded document"]:
+            if is_math:
+                doc_topic = "Multiplication Worksheet Mastery"
+            else:
+                first_lines = [l.strip() for l in cleaned_doc.split("\n") if len(l.strip()) > 3]
+                doc_topic = first_lines[0][:50] if first_lines else "Uploaded Study Material"
+
+        # Sanitize doc_topic to remove any residual UUIDs or file extensions
+        doc_topic = re.sub(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_?", "", doc_topic, flags=re.IGNORECASE)
+        doc_topic = re.sub(r"\.(pdf|docx|pptx|txt|md)$", "", doc_topic, flags=re.IGNORECASE)
+        doc_topic = doc_topic.replace("_", " ").replace("-", " ").strip().title()
+        if not doc_topic:
+            doc_topic = "Uploaded Study Material"
+
+        # Math / Multiplication Worksheet Pathway
+        if is_math:
+            p1 = math_pairs[0] if math_pairs else (4, 6)
+            p2 = math_pairs[1] if len(math_pairs) > 1 else (7, 8)
+            p1_prod = p1[0] * p1[1]
+            p1_sum = p1[0] + p1[1]
+            p2_prod = p2[0] * p2[1]
+
+            if lang == LanguageCode.HINGLISH:
+                m1_speech = (
+                    f"<emotion=enthusiastic>Welcome to today's session! Aaj hum aapke uploaded multiplication worksheet ko master karenge. <pause=300ms> "
+                    f"Dekho, multiplication ka matlab hota hai equal groups ko fast add karna! "
+                    f"Agar aapke paas {p1[0]} boxes hain aur har box mein {p1[1]} items hain, toh ek-ek count karne ke bajaye hum direct multiply karte hain: "
+                    f"{p1[0]} × {p1[1]} = {p1_prod}! Chalo board par iska visual array dekhte hain.</emotion>"
+                )
+                m2_speech = (
+                    f"<emotion=thoughtful>Ab aate hain ek super fast mental math trick par: Break-Apart Strategy! <pause=300ms> "
+                    f"Agar koi bada multiplication ho jaise {p2[0]} × {p2[1]}, toh use do aasaan numbers mein tod kar add kar lo. "
+                    f"Smart whiteboard par dekho calculation kitni simple ho jati hai!</emotion>"
+                )
+            elif lang == LanguageCode.HINDI:
+                m1_speech = (
+                    f"<emotion=enthusiastic>आज के सत्र में आपका स्वागत है! आज हम आपके अध्ययन पत्र पर आधारित गुणन (Multiplication) के सिद्धांतों को समझेंगे। <pause=300ms> "
+                    f"गुणा वास्तव में समान समूहों का बार-बार योग है। उदाहरण के लिए, {p1[0]} समूहों में {p1[1]} वस्तुएं होने पर: {p1[0]} × {p1[1]} = {p1_prod}! "
+                    f"आइए इसे व्हाइटबोर्ड पर देखें।</emotion>"
+                )
+                m2_speech = (
+                    f"<emotion=thoughtful>आइए अब एक त्वरित मानसिक गणित विधि समझें। कठिन संख्याओं को छोटे भागों में बांटकर सरलता से हल किया जा सकता है।</emotion>"
+                )
+            else:
+                m1_speech = (
+                    f"<emotion=enthusiastic>Welcome to today's session! Based on your uploaded worksheet, we are mastering {doc_topic}. <pause=300ms> "
+                    f"Multiplication is simply repeated addition across equal groups! "
+                    f"Instead of counting items one by one, having {p1[0]} groups of {p1[1]} gives us {p1[0]} × {p1[1]} = {p1_prod}! "
+                    f"Let's examine the visual array on our smart whiteboard.</emotion>"
+                )
+                m2_speech = (
+                    f"<emotion=thoughtful>Now let's explore a powerful mental math tool: the Break-Apart (Distributive) strategy. <pause=300ms> "
+                    f"When multiplying factors like {p2[0]} × {p2[1]}, breaking one factor into friendlier numbers like 5 and 2 lets you compute the product mentally in seconds!</emotion>"
+                )
+
+            modules = [
+                LessonModule(
+                    module_id="mod-1",
+                    title=f"Equal Groups & Multiplication Foundations",
+                    estimated_minutes=5,
+                    teaching_script=m1_speech,
+                    visual_action=VisualAction(
+                        type=VisualType.KATEX,
+                        title="Equal Groups & Repeated Addition",
+                        raw_payload=rf"\begin{{aligned}} \text{{Equal Groups:}} & \quad {p1[0]} \times {p1[1]} = \underbrace{{{p1[1]} + {p1[1]} + \dots + {p1[1]}}}_{{{p1[0]} \text{{ groups}}}} = {p1_prod} \\[6pt] \text{{Worksheet Practice:}} & \quad {p2[0]} \times {p2[1]} = {p2_prod} \end{{aligned}}",
+                        explanation_notes=f"Multiplication represents {p1[0]} groups of {p1[1]} items. Total = {p1_prod}.",
+                        entry_animation_cue="fade-slide"
+                    ),
+                    checkpoint=Checkpoint(
+                        question_id="q1",
+                        question_text=f"Multiplication Check: If you have {p1[0]} packs with {p1[1]} pencils in each pack, what is the total count ({p1[0]} × {p1[1]})?",
+                        question_type=CheckpointType.MCQ,
+                        options=[
+                            CheckpointOption(id="A", text=f"{p1_prod} pencils ({p1[0]} × {p1[1]} = {p1_prod})", is_correct=True, feedback=f"Correct! {p1[0]} equal groups of {p1[1]} give a total of {p1_prod}."),
+                            CheckpointOption(id="B", text=f"{p1_sum} pencils ({p1[0]} + {p1[1]} = {p1_sum})", is_correct=False, feedback=f"Watch out: {p1[0]} + {p1[1]} is simple addition. We have {p1[0]} groups, so we multiply: {p1[0]} × {p1[1]} = {p1_prod}."),
+                            CheckpointOption(id="C", text=f"{max(p1_prod - 4, 1)} pencils", is_correct=False, feedback=f"Double-check your times-table calculation: {p1[0]} × {p1[1]} = {p1_prod}.")
+                        ],
+                        expected_concept=f"Multiplication is repeated addition of equal groups: {p1[0]} × {p1[1]} = {p1_prod}.",
+                        rubric=f"Look for understanding that {p1[0]} groups of {p1[1]} requires multiplication resulting in {p1_prod}."
+                    )
+                ),
+                LessonModule(
+                    module_id="mod-2",
+                    title="Mental Math & Break-Apart Strategy",
+                    estimated_minutes=5,
+                    teaching_script=m2_speech,
+                    visual_action=VisualAction(
+                        type=VisualType.KATEX,
+                        title="Distributive Break-Apart Method",
+                        raw_payload=r"\begin{aligned} 8 \times 7 &= 8 \times (5 + 2) \\[4pt] &= (8 \times 5) + (8 \times 2) \\[4pt] &= 40 + 16 = 56 \end{aligned}",
+                        explanation_notes="Breaking 7 into 5 + 2 allows fast mental multiplication using simpler times tables.",
+                        entry_animation_cue="step-reveal"
+                    ),
+                    checkpoint=Checkpoint(
+                        question_id="q2",
+                        question_text="Which of the following correctly uses the break-apart strategy to solve 6 × 7?",
+                        question_type=CheckpointType.MCQ,
+                        options=[
+                            CheckpointOption(id="A", text="(6 × 5) + (6 × 2) = 30 + 12 = 42", is_correct=True, feedback="Spot on! Decomposing 7 into 5 + 2 makes mental calculation effortless."),
+                            CheckpointOption(id="B", text="(6 × 5) + (6 × 5) = 30 + 30 = 60", is_correct=False, feedback="Incorrect: 5 + 5 is 10, not 7."),
+                            CheckpointOption(id="C", text="6 + 7 = 13", is_correct=False, feedback="Incorrect: that is addition, not multiplication.")
+                        ],
+                        expected_concept="Distributive property: a × (b + c) = (a × b) + (a × c).",
+                        rubric="Verify student understands decomposing factors for mental multiplication."
+                    )
+                )
+            ]
+            return LessonPlan(
+                topic=doc_topic,
+                student_level=level,
+                language=lang,
+                total_estimated_minutes=10,
+                pedagogical_goals=[
+                    f"Master foundational multiplication principles from {doc_topic}",
+                    "Apply equal grouping and repeated addition mental models",
+                    "Solve practical arithmetic checkpoints with 100% accuracy"
+                ],
+                modules=modules
+            )
+
+        # General Text / Concept Document Pathway
+        paragraphs = [p.strip() for p in cleaned_doc.split("\n\n") if len(p.strip()) > 30]
+        primary_para = paragraphs[0] if paragraphs else cleaned_doc[:300]
+        # Extract 2 clean sentences without any markdown tags
+        clean_sentences = [
+            s.strip() for s in re.split(r"[.\n]+", primary_para)
+            if len(s.strip()) > 15 and not s.strip().startswith(("#", "-", "*"))
+        ]
+        summary_intro = " ".join(clean_sentences[:2]) if clean_sentences else f"We are examining key insights from our uploaded material on {doc_topic}."
+
+        modules = [
+            LessonModule(
+                module_id="mod-1",
+                title=f"Core Foundations of {doc_topic}",
+                estimated_minutes=5,
+                teaching_script=f"<emotion=enthusiastic>Welcome to today's session! Based on your uploaded document, we are exploring {doc_topic}. {summary_intro} Let's unpack the foundational principles together on our smart whiteboard!</emotion>",
+                visual_action=VisualAction(
+                    type=VisualType.CALLOUT,
+                    title=f"Source Highlights: {doc_topic}",
+                    raw_payload=f"**Core Insights from Document**:\n\n{primary_para[:350]}...",
+                    explanation_notes=f"Key conceptual points extracted directly from your uploaded material on {doc_topic}.",
+                    entry_animation_cue="fade-slide"
+                ),
+                checkpoint=Checkpoint(
+                    question_id="q1",
+                    question_text=f"Based on the uploaded document on {doc_topic}, what is the central thesis or operational mechanism presented?",
+                    question_type=CheckpointType.EXPLAIN_IN_OWN_WORDS,
+                    options=[],
+                    expected_concept=f"Clear understanding of the key concept from the uploaded document on {doc_topic}.",
+                    rubric=f"Look for direct reference to principles detailed in the uploaded document: {summary_intro[:100]}."
+                )
+            ),
+            LessonModule(
+                module_id="mod-2",
+                title=f"Operational Mechanics & Process Flow",
+                estimated_minutes=5,
+                teaching_script=f"<emotion=thoughtful>Now let's examine how the components in {doc_topic} interact and produce outcomes. Board par system workflow dekhte hain.</emotion>",
+                visual_action=VisualAction(
+                    type=VisualType.MERMAID,
+                    title=f"{doc_topic} Structural Flow",
+                    raw_payload=f"""graph LR
+    Input["Input Data: {doc_topic[:18]}"] --> Process["Core Mechanism"]
+    Process --> Evaluator["Verification & Validation"]
+    Evaluator --> Target["Synthesized Outcome"]
+    style Process fill:#6366f1,stroke:#4338ca,color:#fff
+    style Target fill:#10b981,stroke:#047857,color:#fff""",
+                    explanation_notes=f"System relationships identified from document analysis of {doc_topic}.",
+                    entry_animation_cue="step-reveal"
+                ),
+                checkpoint=Checkpoint(
+                    question_id="q2",
+                    question_text=f"How does the core mechanism in {doc_topic} transform the initial inputs?",
+                    question_type=CheckpointType.MCQ,
+                    options=[
+                        CheckpointOption(id="A", text="It systematically structures and validates the information through the core mechanism.", is_correct=True, feedback="Spot on! The document details this exact transformation process."),
+                        CheckpointOption(id="B", text="It bypasses processing and leaves inputs unchanged.", is_correct=False, feedback="The document emphasizes an active analytical pipeline."),
+                        CheckpointOption(id="C", text="The process is completely random with no structured stages.", is_correct=False, feedback="The document defines explicit structured stages.")
+                    ],
+                    expected_concept="Understanding the sequence of operations described in the document.",
+                    rubric="Check understanding of the document's operational pipeline."
+                )
+            )
+        ]
+        return LessonPlan(
+            topic=doc_topic,
+            student_level=level,
+            language=lang,
+            total_estimated_minutes=10,
+            pedagogical_goals=[
+                f"Master core principles from uploaded material on {doc_topic}",
+                f"Analyze key operational workflows and document conclusions",
+                f"Demonstrate applied conceptual reasoning in Socratic checkpoints"
+            ],
+            modules=modules
+        )
+
+    # 2. Topic-specific templates for Transformers (only if explicitly requested)
     if "attention" in topic.lower() or "transformer" in topic.lower():
         if lang == LanguageCode.HINGLISH:
             m1_script = "<emotion=enthusiastic>Welcome to today's session! Aaj hum explore karne wale hain Transformer architecture ka sabse revolutionary component: Self-Attention Mechanism. <pause=300ms> Socho agar aap ek lamba sentence padh rahe ho, jaise 'The animal didn't cross the street because it was too tired' - aapka dimaag turant samajh jata hai ki 'it' yahan animal ke liye hai, street ke liye nahi. Par computer yeh kaise samjhe? Let's visualize this on our smart whiteboard!</emotion>"
@@ -225,56 +472,156 @@ class ScaledDotProductAttention(nn.Module):
             )
         ]
     else:
-        # General topic fallback curriculum generator
+        # 3. Dynamic custom topic generator for ANY user topic
+        is_math, math_pairs = _detect_math_worksheet("", topic)
+        if is_math:
+            p1 = math_pairs[0] if math_pairs else (4, 6)
+            p2 = math_pairs[1] if len(math_pairs) > 1 else (7, 8)
+            p1_prod = p1[0] * p1[1]
+            p1_sum = p1[0] + p1[1]
+            p2_prod = p2[0] * p2[1]
+
+            if lang == LanguageCode.HINGLISH:
+                m1_speech = (
+                    f"<emotion=enthusiastic>Namaste! Aaj hum explore karenge {topic}. <pause=300ms> "
+                    f"Multiplication असल mein equal groups ko bar-bar add karne ka short-cut hai! "
+                    f"Agar aapke paas {p1[0]} boxes hain aur har box mein {p1[1]} items hain, toh direct multiply karo: "
+                    f"{p1[0]} × {p1[1]} = {p1_prod}! Chalo board par iska visual array dekhte hain.</emotion>"
+                )
+            elif lang == LanguageCode.HINDI:
+                m1_speech = (
+                    f"<emotion=enthusiastic>नमस्ते! आज के सत्र में हम {topic} के बुनियादी सिद्धांतों को समझेंगे। <pause=300ms> "
+                    f"गुणा समान समूहों के योग का तेज तरीका है: {p1[0]} × {p1[1]} = {p1_prod}! आइए इसे व्हाइटबोर्ड पर देखें।</emotion>"
+                )
+            else:
+                m1_speech = (
+                    f"<emotion=enthusiastic>Welcome! Today we are mastering {topic}. <pause=300ms> "
+                    f"Multiplication is simply repeated addition across equal groups! "
+                    f"Having {p1[0]} groups of {p1[1]} gives {p1[0]} × {p1[1]} = {p1_prod}! "
+                    f"Let's visualize the groups on our smart whiteboard.</emotion>"
+                )
+
+            modules = [
+                LessonModule(
+                    module_id="mod-1",
+                    title=f"Equal Groups & Multiplication Foundations",
+                    estimated_minutes=5,
+                    teaching_script=m1_speech,
+                    visual_action=VisualAction(
+                        type=VisualType.KATEX,
+                        title="Equal Groups & Repeated Addition",
+                        raw_payload=rf"\begin{{aligned}} \text{{Equal Groups:}} & \quad {p1[0]} \times {p1[1]} = \underbrace{{{p1[1]} + {p1[1]} + \dots + {p1[1]}}}_{{{p1[0]} \text{{ groups}}}} = {p1_prod} \\[6pt] \text{{Practice:}} & \quad {p2[0]} \times {p2[1]} = {p2_prod} \end{{aligned}}",
+                        explanation_notes=f"Multiplication represents {p1[0]} groups of {p1[1]} items. Total = {p1_prod}.",
+                        entry_animation_cue="fade-slide"
+                    ),
+                    checkpoint=Checkpoint(
+                        question_id="q1",
+                        question_text=f"Multiplication Check: If you have {p1[0]} packs with {p1[1]} pencils in each pack, what is the total count ({p1[0]} × {p1[1]})?",
+                        question_type=CheckpointType.MCQ,
+                        options=[
+                            CheckpointOption(id="A", text=f"{p1_prod} pencils ({p1[0]} × {p1[1]} = {p1_prod})", is_correct=True, feedback=f"Correct! {p1[0]} equal groups of {p1[1]} give a total of {p1_prod}."),
+                            CheckpointOption(id="B", text=f"{p1_sum} pencils ({p1[0]} + {p1[1]} = {p1_sum})", is_correct=False, feedback=f"Watch out: {p1[0]} + {p1[1]} is simple addition. We have {p1[0]} groups, so we multiply: {p1[0]} × {p1[1]} = {p1_prod}."),
+                            CheckpointOption(id="C", text=f"{max(p1_prod - 4, 1)} pencils", is_correct=False, feedback=f"Double-check your times-table calculation: {p1[0]} × {p1[1]} = {p1_prod}.")
+                        ],
+                        expected_concept=f"Multiplication is repeated addition of equal groups: {p1[0]} × {p1[1]} = {p1_prod}.",
+                        rubric=f"Look for understanding that {p1[0]} groups of {p1[1]} requires multiplication resulting in {p1_prod}."
+                    )
+                ),
+                LessonModule(
+                    module_id="mod-2",
+                    title="Mental Math & Break-Apart Strategy",
+                    estimated_minutes=5,
+                    teaching_script=f"<emotion=thoughtful>Now let's explore the Break-Apart Strategy to calculate multiplication facts mentally in seconds.</emotion>",
+                    visual_action=VisualAction(
+                        type=VisualType.KATEX,
+                        title="Distributive Break-Apart Method",
+                        raw_payload=r"\begin{aligned} 8 \times 7 &= 8 \times (5 + 2) \\[4pt] &= (8 \times 5) + (8 \times 2) \\[4pt] &= 40 + 16 = 56 \end{aligned}",
+                        explanation_notes="Breaking 7 into 5 + 2 allows fast mental multiplication.",
+                        entry_animation_cue="step-reveal"
+                    ),
+                    checkpoint=Checkpoint(
+                        question_id="q2",
+                        question_text="Which of the following correctly uses the break-apart strategy to solve 6 × 7?",
+                        question_type=CheckpointType.MCQ,
+                        options=[
+                            CheckpointOption(id="A", text="(6 × 5) + (6 × 2) = 30 + 12 = 42", is_correct=True, feedback="Spot on! Decomposing 7 into 5 + 2 makes mental calculation effortless."),
+                            CheckpointOption(id="B", text="(6 × 5) + (6 × 5) = 30 + 30 = 60", is_correct=False, feedback="Incorrect: 5 + 5 is 10, not 7."),
+                            CheckpointOption(id="C", text="6 + 7 = 13", is_correct=False, feedback="Incorrect: that is addition, not multiplication.")
+                        ],
+                        expected_concept="Distributive property: a × (b + c) = (a × b) + (a × c).",
+                        rubric="Verify student understands decomposing factors for mental multiplication."
+                    )
+                )
+            ]
+            return LessonPlan(
+                topic=topic,
+                student_level=level,
+                language=lang,
+                total_estimated_minutes=10,
+                pedagogical_goals=[
+                    f"Master foundational multiplication principles of {topic}",
+                    "Apply equal grouping and repeated addition mental models",
+                    "Solve practical arithmetic checkpoints with 100% accuracy"
+                ],
+                modules=modules
+            )
+
+        if lang == LanguageCode.HINGLISH:
+            m1_speech = f"<emotion=enthusiastic>Namaste! Aaj ke interactive session mein hum master karne wale hain {topic}. <pause=300ms> Pehle iske first principles aur core intuition ko samajhte hain, fir deep architectural concepts ko whiteboard par dekhenge.</emotion>"
+        elif lang == LanguageCode.HINDI:
+            m1_speech = f"<emotion=enthusiastic>नमस्ते! आज के सत्र में हम {topic} के बुनियादी सिद्धांतों को समझेंगे। आइए पहले इसका मुख्य विचार और महत्व देखें।</emotion>"
+        else:
+            m1_speech = f"<emotion=enthusiastic>Welcome! Today we are exploring {topic}. Let's start with first principles and build a crystal-clear mental model before diving into the details.</emotion>"
+
         modules = [
             LessonModule(
                 module_id="mod-1",
                 title=f"Core Foundations of {topic}",
                 estimated_minutes=5,
-                teaching_script=f"<emotion=enthusiastic>Welcome! Today we are mastering {topic}. Let's start with first principles and build a crystal-clear mental model before diving into the details.</emotion>",
+                teaching_script=m1_speech,
                 visual_action=VisualAction(
                     type=VisualType.CALLOUT,
                     title=f"First Principles of {topic}",
-                    raw_payload=f"**Core Thesis**:\n1. Why {topic} exists\n2. Key fundamental problem it solves\n3. The primary mechanism driving it",
-                    explanation_notes="Remember: Master the core intuition first, the syntax and details follow naturally.",
+                    raw_payload=f"**Core Thesis of {topic}**:\n1. Why {topic} is essential and what problems it solves\n2. The primary operational principles\n3. Critical real-world implications and edge cases",
+                    explanation_notes=f"Master the foundational concepts of {topic} before diving into execution.",
                     entry_animation_cue="fade-slide"
                 ),
                 checkpoint=Checkpoint(
                     question_id="q1",
-                    question_text=f"In your own words, what is the primary problem that {topic} solves?",
+                    question_text=f"In your own words, what is the primary purpose and fundamental intuition behind {topic}?",
                     question_type=CheckpointType.EXPLAIN_IN_OWN_WORDS,
                     options=[],
-                    expected_concept=f"Accurately explain the motivating problem or core purpose behind {topic}.",
-                    rubric="Look for clear identification of the problem domain and why standard naive approaches fail."
+                    expected_concept=f"Accurately explain the core purpose and motivating principles behind {topic}.",
+                    rubric=f"Look for clear understanding of the problem domain and how {topic} addresses it."
                 )
             ),
             LessonModule(
                 module_id="mod-2",
-                title=f"Architectural Breakdown of {topic}",
+                title=f"Mechanics & Operational Workflow of {topic}",
                 estimated_minutes=5,
-                teaching_script=f"<emotion=thoughtful>Now let's break down the mechanics of {topic} step by step on our whiteboard.</emotion>",
+                teaching_script=f"<emotion=thoughtful>Now let's trace the mechanics of {topic} step by step on our whiteboard.</emotion>",
                 visual_action=VisualAction(
                     type=VisualType.MERMAID,
-                    title="Process & Relationship Flow",
-                    raw_payload="""graph LR
-    Input["Input / Context"] --> Process["Core Engine"]
-    Process --> Analysis["Evaluation & Decision"]
+                    title=f"{topic} Operational Pipeline",
+                    raw_payload=f"""graph LR
+    Input["Context / Input: {topic[:16]}"] --> Process["Analytical Engine"]
+    Process --> Analysis["Decision & Transformation"]
     Analysis --> Output["Target Outcome"]
     style Process fill:#6366f1,stroke:#4338ca,color:#fff
     style Output fill:#10b981,stroke:#047857,color:#fff""",
-                    explanation_notes="Follow the arrows to see how information transforms at each stage.",
-                    entry_animation_cue="fade-slide"
+                    explanation_notes="Follow the pipeline stages to understand how information flows through the system.",
+                    entry_animation_cue="step-reveal"
                 ),
                 checkpoint=Checkpoint(
                     question_id="q2",
-                    question_text=f"Which stage in the process is responsible for core decision making in {topic}?",
+                    question_text=f"Which stage in the {topic} pipeline is responsible for the core decision-making and transformation?",
                     question_type=CheckpointType.MCQ,
                     options=[
-                        CheckpointOption(id="A", text="The Evaluation & Decision stage after core processing.", is_correct=True, feedback="Exactly right!"),
-                        CheckpointOption(id="B", text="The raw Input stage before any transformation.", is_correct=False, feedback="Raw input is passive; decisions occur during analysis."),
-                        CheckpointOption(id="C", text="It is entirely random and undirected.", is_correct=False, feedback="The system is structured and deterministic.")
+                        CheckpointOption(id="A", text="The Decision & Transformation stage after processing.", is_correct=True, feedback="Exactly right! That is where the key state changes occur."),
+                        CheckpointOption(id="B", text="The raw Input stage before any processing.", is_correct=False, feedback="Raw input is passive; decisions happen during transformation."),
+                        CheckpointOption(id="C", text="It happens purely by random chance.", is_correct=False, feedback=f"The architecture of {topic} is structured and deterministic.")
                     ],
-                    expected_concept="Understanding the sequence of operations.",
+                    expected_concept=f"Understanding the sequence of operations in {topic}.",
                     rubric="Check understanding of pipeline ordering."
                 )
             )

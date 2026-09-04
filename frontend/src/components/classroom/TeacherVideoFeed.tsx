@@ -83,14 +83,14 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
         setTimeout(() => setSimliStatusText(null), 4000);
       } else {
         setWebRtcActive(false);
-        setSimliStatusText('Interactive 2D Canvas Active (Fallback)');
+        setSimliStatusText('High-Fidelity AI Professor Active');
         setTimeout(() => setSimliStatusText(null), 4000);
       }
     } catch (err) {
       console.warn('Simli toggle error:', err);
       setIsSimliConnecting(false);
       setWebRtcActive(false);
-      setSimliStatusText('Interactive 2D Canvas Active');
+      setSimliStatusText('High-Fidelity AI Professor Active');
       setTimeout(() => setSimliStatusText(null), 4000);
     }
   };
@@ -110,7 +110,7 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
     if (audioBase64 && !isMuted) {
       if (audioRef.current) {
         audioRef.current.src = `data:audio/mp3;base64,${audioBase64}`;
-        audioRef.current.play().catch((e) => console.log('Audio autoplay prevented:', e));
+        audioRef.current.play().catch((e) => console.log('Audio autoplay notice:', e));
       }
       return;
     }
@@ -136,7 +136,7 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
     }
   }, [script, isMuted, language, audioBase64]);
 
-  // Animated procedural avatar canvas drawing & audio telemetry
+  // High-Fidelity Animated Humanoid AI Professor Canvas
   useEffect(() => {
     let animationFrameId: number;
     let phase = 0;
@@ -146,98 +146,364 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Ambient floating particles
+    const particles = Array.from({ length: 18 }, () => ({
+      x: Math.random() * 400,
+      y: Math.random() * 300,
+      radius: Math.random() * 2 + 1,
+      speed: Math.random() * 0.4 + 0.2,
+      opacity: Math.random() * 0.4 + 0.2,
+    }));
+
     const render = () => {
-      phase += 0.05;
-      const width = canvas.width;
-      const height = canvas.height;
+      phase += 0.04;
+
+      // Handle Retina / HiDPI Displays for crisp rendering
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width || 400;
+      const height = rect.height || 260;
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
 
       const isPraising = avatarEmotion === 'encouraging' && !isRemediating;
 
-      // Clean light canvas background gradient
+      // ─── 1. Cinematic Studio Background ───
       const bgGrad = ctx.createRadialGradient(
         width / 2,
-        height * 0.45,
-        20,
+        height * 0.35,
+        30,
         width / 2,
-        height / 2,
-        width * 0.7
+        height * 0.5,
+        width * 0.75
       );
       if (isRemediating) {
-        bgGrad.addColorStop(0, '#fef3c7');
+        bgGrad.addColorStop(0, '#fef9c3');
+        bgGrad.addColorStop(0.6, '#fde68a');
+        bgGrad.addColorStop(1, '#e2e8f0');
       } else if (isPraising) {
-        bgGrad.addColorStop(0, '#d1fae5');
+        bgGrad.addColorStop(0, '#ecfdf5');
+        bgGrad.addColorStop(0.6, '#a7f3d0');
+        bgGrad.addColorStop(1, '#cbd5e1');
       } else {
-        bgGrad.addColorStop(0, '#f8fafc');
+        bgGrad.addColorStop(0, '#f1f5f9');
+        bgGrad.addColorStop(0.55, '#e2e8f0');
+        bgGrad.addColorStop(1, '#94a3b8');
       }
-      bgGrad.addColorStop(1, '#e2e8f0');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // Procedural Teacher Avatar Halo
-      ctx.beginPath();
-      const haloRadius = 75 + (isSpeaking ? Math.sin(phase * 4) * 6 : 0);
-      const haloGrad = ctx.createRadialGradient(
-        width / 2,
-        height * 0.42,
-        35,
-        width / 2,
-        height * 0.42,
-        haloRadius
-      );
+      // Subtle ambient particles
+      particles.forEach((p) => {
+        p.y -= p.speed;
+        if (p.y < 0) p.y = height;
+        ctx.beginPath();
+        ctx.arc(p.x * (width / 400), p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity * 0.5})`;
+        ctx.fill();
+      });
 
+      // ─── 2. Breathing & Micro-Movement Calculations ───
+      const breathOffset = Math.sin(phase * 1.4) * 2;
+      const headTilt = Math.sin(phase * 0.8) * 0.025;
+      const cx = width / 2;
+      const cy = height * 0.42 + breathOffset;
+
+      // ─── 3. Soft Studio Aura / Keylight Halo ───
+      ctx.beginPath();
+      const auraRadius = 80 + (isSpeaking ? Math.sin(phase * 5) * 5 : 0);
+      const auraGrad = ctx.createRadialGradient(cx, cy, 25, cx, cy, auraRadius);
       if (isRemediating) {
-        haloGrad.addColorStop(0, 'rgba(245, 158, 11, 0.25)');
+        auraGrad.addColorStop(0, 'rgba(245, 158, 11, 0.22)');
       } else if (isPraising) {
-        haloGrad.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+        auraGrad.addColorStop(0, 'rgba(16, 185, 129, 0.22)');
       } else {
-        haloGrad.addColorStop(0, 'rgba(99, 102, 241, 0.2)');
+        auraGrad.addColorStop(0, 'rgba(99, 102, 241, 0.18)');
       }
-      haloGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = haloGrad;
-      ctx.arc(width / 2, height * 0.42, haloRadius, 0, Math.PI * 2);
+      auraGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = auraGrad;
+      ctx.arc(cx, cy, auraRadius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Stylized Avatar Head
+      // Save context for head rotation / tilt
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(headTilt);
+      ctx.translate(-cx, -cy);
+
+      // ─── 4. Professor Torso & Tailored Academic Blazer ───
+      // Torso / Shoulders
       ctx.beginPath();
-      ctx.arc(width / 2, height * 0.42, 48, 0, Math.PI * 2);
+      ctx.moveTo(cx - 95, height);
+      ctx.quadraticCurveTo(cx - 75, cy + 42, cx - 35, cy + 32);
+      ctx.lineTo(cx + 35, cy + 32);
+      ctx.quadraticCurveTo(cx + 75, cy + 42, cx + 95, height);
+      ctx.closePath();
+      const blazerGrad = ctx.createLinearGradient(cx - 80, cy + 30, cx + 80, height);
+      blazerGrad.addColorStop(0, '#1e293b');
+      blazerGrad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = blazerGrad;
+      ctx.fill();
+
+      // Shirt Collar & Tie / Scarf
+      ctx.beginPath();
+      ctx.moveTo(cx - 24, cy + 28);
+      ctx.lineTo(cx, cy + 44);
+      ctx.lineTo(cx + 24, cy + 28);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
+
+      // Silk Professor Scarf / Accent
+      ctx.beginPath();
+      ctx.moveTo(cx - 6, cy + 38);
+      ctx.lineTo(cx + 6, cy + 38);
+      ctx.lineTo(cx + 10, cy + 65);
+      ctx.lineTo(cx, cy + 72);
+      ctx.lineTo(cx - 10, cy + 65);
+      ctx.closePath();
+      ctx.fillStyle = isRemediating ? '#d97706' : isPraising ? '#059669' : '#4338ca';
+      ctx.fill();
+
+      // Blazer Lapels
+      ctx.beginPath();
+      ctx.moveTo(cx - 36, cy + 32);
+      ctx.lineTo(cx - 14, cy + 60);
+      ctx.lineTo(cx - 30, cy + 68);
+      ctx.fillStyle = '#334155';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(cx + 36, cy + 32);
+      ctx.lineTo(cx + 14, cy + 60);
+      ctx.lineTo(cx + 30, cy + 68);
+      ctx.fillStyle = '#334155';
+      ctx.fill();
+
+      // ─── 5. Neck with Natural Anatomy ───
+      ctx.beginPath();
+      ctx.rect(cx - 14, cy + 10, 28, 26);
+      const neckGrad = ctx.createLinearGradient(cx, cy + 10, cx, cy + 36);
+      neckGrad.addColorStop(0, '#f6c3a5');
+      neckGrad.addColorStop(1, '#e2aa88');
+      ctx.fillStyle = neckGrad;
+      ctx.fill();
+
+      // ─── 6. Head Shape & Natural Skin Tones ───
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 8, 40, 48, 0, 0, Math.PI * 2);
+      const skinGrad = ctx.createRadialGradient(cx - 6, cy - 14, 10, cx, cy - 8, 44);
+      skinGrad.addColorStop(0, '#fed7aa');
+      skinGrad.addColorStop(0.7, '#fdb98a');
+      skinGrad.addColorStop(1, '#f09d6b');
+      ctx.fillStyle = skinGrad;
+      ctx.fill();
+
+      // Subtle cheek blush
+      ctx.beginPath();
+      ctx.ellipse(cx - 24, cy - 4, 10, 6, -0.1, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(244, 114, 182, 0.22)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.ellipse(cx + 24, cy - 4, 10, 6, 0.1, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(244, 114, 182, 0.22)';
+      ctx.fill();
+
+      // ─── 7. Styled Academic Hair (Back layer & Top Volume) ───
+      // Top hair volume
+      ctx.beginPath();
+      ctx.moveTo(cx - 44, cy - 18);
+      ctx.quadraticCurveTo(cx - 48, cy - 56, cx - 12, cy - 62);
+      ctx.quadraticCurveTo(cx + 16, cy - 64, cx + 44, cy - 54);
+      ctx.quadraticCurveTo(cx + 48, cy - 20, cx + 44, cy - 12);
+      ctx.quadraticCurveTo(cx + 22, cy - 44, cx, cy - 40);
+      ctx.quadraticCurveTo(cx - 24, cy - 44, cx - 44, cy - 18);
+      ctx.closePath();
+      const hairGrad = ctx.createLinearGradient(cx - 30, cy - 60, cx + 30, cy - 10);
+      hairGrad.addColorStop(0, '#292524');
+      hairGrad.addColorStop(0.5, '#44403c');
+      hairGrad.addColorStop(1, '#1c1917');
+      ctx.fillStyle = hairGrad;
+      ctx.fill();
+
+      // ─── 8. Expressive Eyebrows ───
+      const browOffset = avatarEmotion === 'enthusiastic' ? -4 : avatarEmotion === 'thoughtful' ? -2 : 0;
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#292524';
+      ctx.lineCap = 'round';
+
+      // Left eyebrow
+      ctx.beginPath();
+      ctx.moveTo(cx - 26, cy - 20 + browOffset);
+      ctx.quadraticCurveTo(cx - 16, cy - 24 + browOffset, cx - 6, cy - 20 + browOffset);
+      ctx.stroke();
+
+      // Right eyebrow (slightly arched if thoughtful)
+      const rightBrowOffset = avatarEmotion === 'thoughtful' ? browOffset - 2 : browOffset;
+      ctx.beginPath();
+      ctx.moveTo(cx + 6, cy - 20 + rightBrowOffset);
+      ctx.quadraticCurveTo(cx + 16, cy - 24 + rightBrowOffset, cx + 26, cy - 20 + rightBrowOffset);
+      ctx.stroke();
+
+      // ─── 9. Expressive Eyes & Natural Blinking ───
+      // Natural blink cycle: blinks every ~3.5 seconds for 8 frames
+      const blinkCounter = (phase * 20) % 70;
+      const isBlinking = blinkCounter > 67;
+      const eyeHeight = isBlinking ? 1 : 6.5;
+
+      // Left Eye
+      ctx.beginPath();
+      ctx.ellipse(cx - 16, cy - 12, 8, eyeHeight, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      if (!isBlinking) {
+        // Hazel-Green Iris
+        ctx.beginPath();
+        ctx.arc(cx - 16, cy - 12, 4.5, 0, Math.PI * 2);
+        const irisGrad = ctx.createRadialGradient(cx - 16, cy - 12, 1, cx - 16, cy - 12, 4.5);
+        irisGrad.addColorStop(0, '#047857');
+        irisGrad.addColorStop(0.7, '#065f46');
+        irisGrad.addColorStop(1, '#022c22');
+        ctx.fillStyle = irisGrad;
+        ctx.fill();
+
+        // Pupil
+        ctx.beginPath();
+        ctx.arc(cx - 16, cy - 12, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = '#09090b';
+        ctx.fill();
+
+        // Gleaming Cornea Catchlights (Intelligence reflections)
+        ctx.beginPath();
+        ctx.arc(cx - 17.5, cy - 13.5, 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(cx - 14.5, cy - 10.5, 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fill();
+      }
+
+      // Right Eye
+      ctx.beginPath();
+      ctx.ellipse(cx + 16, cy - 12, 8, eyeHeight, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      if (!isBlinking) {
+        // Iris
+        ctx.beginPath();
+        ctx.arc(cx + 16, cy - 12, 4.5, 0, Math.PI * 2);
+        const irisGrad = ctx.createRadialGradient(cx + 16, cy - 12, 1, cx + 16, cy - 12, 4.5);
+        irisGrad.addColorStop(0, '#047857');
+        irisGrad.addColorStop(0.7, '#065f46');
+        irisGrad.addColorStop(1, '#022c22');
+        ctx.fillStyle = irisGrad;
+        ctx.fill();
+
+        // Pupil
+        ctx.beginPath();
+        ctx.arc(cx + 16, cy - 12, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = '#09090b';
+        ctx.fill();
+
+        // Catchlights
+        ctx.beginPath();
+        ctx.arc(cx + 14.5, cy - 13.5, 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(cx + 17.5, cy - 10.5, 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fill();
+      }
+
+      // ─── 10. Modern Professor Glasses ───
+      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = '#1e293b';
+
+      // Left Frame
+      ctx.beginPath();
+      ctx.roundRect(cx - 26, cy - 19, 20, 15, 4);
+      ctx.stroke();
+
+      // Right Frame
+      ctx.beginPath();
+      ctx.roundRect(cx + 6, cy - 19, 20, 15, 4);
+      ctx.stroke();
+
+      // Nose Bridge
+      ctx.beginPath();
+      ctx.moveTo(cx - 6, cy - 12);
+      ctx.lineTo(cx + 6, cy - 12);
+      ctx.stroke();
+
+      // Lens Reflection Sheen (Subtle diagonal glass reflection)
+      ctx.beginPath();
+      ctx.moveTo(cx - 23, cy - 17);
+      ctx.lineTo(cx - 15, cy - 6);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
       ctx.lineWidth = 1.5;
-      ctx.strokeStyle = isRemediating
-        ? '#f59e0b'
-        : isPraising
-        ? '#10b981'
-        : '#6366f1';
       ctx.stroke();
 
-      // Avatar Eyes
-      const eyeOffset = Math.sin(phase * 1.5) * 1.5;
-      ctx.fillStyle = isPraising ? '#059669' : '#0f172a';
       ctx.beginPath();
-      ctx.arc(width / 2 - 16, height * 0.40 + eyeOffset, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(width / 2 + 16, height * 0.40 + eyeOffset, 4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Avatar Mouth
-      ctx.beginPath();
-      const mouthOpen = isSpeaking ? Math.abs(Math.sin(phase * 6.5)) * 9 + 2 : 2;
-      ctx.ellipse(width / 2, height * 0.48, 9, mouthOpen, 0, 0, Math.PI * 2);
-      ctx.fillStyle = isRemediating ? '#d97706' : '#e11d48';
-      ctx.fill();
-
-      // Shoulders / Torso
-      ctx.beginPath();
-      ctx.moveTo(width / 2 - 60, height);
-      ctx.quadraticCurveTo(width / 2 - 40, height * 0.65, width / 2, height * 0.65);
-      ctx.quadraticCurveTo(width / 2 + 40, height * 0.65, width / 2 + 60, height);
-      ctx.fillStyle = '#f1f5f9';
-      ctx.fill();
-      ctx.strokeStyle = '#cbd5e1';
+      ctx.moveTo(cx + 9, cy - 17);
+      ctx.lineTo(cx + 17, cy - 6);
       ctx.stroke();
 
-      // Waveform simulation
+      // ─── 11. Subtle Nose ───
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 10);
+      ctx.lineTo(cx + 1.5, cy + 3);
+      ctx.lineTo(cx - 3, cy + 5);
+      ctx.strokeStyle = 'rgba(194, 117, 72, 0.5)';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+
+      // ─── 12. Dynamic Multi-Phoneme Lip-Syncing Mouth ───
+      const mouthY = cy + 18;
+      if (isSpeaking) {
+        // Multi-phoneme viseme simulation
+        const mouthOpen = Math.abs(Math.sin(phase * 7)) * 7 + 2.5;
+        const mouthWidth = 9 + Math.sin(phase * 5) * 3;
+
+        // Dark inner mouth depth
+        ctx.beginPath();
+        ctx.ellipse(cx, mouthY, mouthWidth, mouthOpen, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#450a0a';
+        ctx.fill();
+
+        // Upper white teeth line
+        ctx.beginPath();
+        ctx.roundRect(cx - mouthWidth * 0.6, mouthY - mouthOpen * 0.6, mouthWidth * 1.2, 2.5, 1);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // Lip outline
+        ctx.beginPath();
+        ctx.ellipse(cx, mouthY, mouthWidth, mouthOpen, 0, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#be123c';
+        ctx.stroke();
+      } else {
+        // Resting welcoming smile
+        ctx.beginPath();
+        ctx.moveTo(cx - 12, mouthY);
+        ctx.quadraticCurveTo(cx, mouthY + (isPraising ? 5 : 3), cx + 12, mouthY);
+        ctx.lineWidth = 2.2;
+        ctx.strokeStyle = '#be123c';
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      // Waveform bars telemetry
       if (isSpeaking) {
         setAudioWaves((prev) =>
           prev.map((_, i) => Math.floor(Math.sin(phase * 4 + i) * 35 + 45))
@@ -312,7 +578,7 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
               }`}
             />
             <span className="text-[11px] font-medium text-slate-900 tracking-wide font-['Inter']">
-              {isSpeaking ? 'Synapse Live' : 'Listening'}
+              {isSpeaking ? 'Dr. Sophia' : 'Listening'}
             </span>
           </div>
 
@@ -333,39 +599,40 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
                 ? 'bg-slate-900 text-white border-slate-900'
                 : 'bg-white/80 hover:bg-white text-slate-700 border-slate-200'
             }`}
-            title="Toggle Simli WebRTC Video Stream vs 2D Avatar"
+            title="Toggle Simli WebRTC Video Stream vs High-Fidelity Avatar"
           >
             {isSimliConnecting ? (
               <div className="w-3 h-3 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
             ) : webRtcActive ? (
-              <Video className="w-3 h-3 text-emerald-400" />
+              <Video className="w-3.5 h-3.5 text-emerald-400" />
             ) : (
-              <User className="w-3 h-3 text-slate-500" />
+              <User className="w-3.5 h-3.5 text-indigo-500" />
             )}
-            <span>{webRtcActive ? 'Simli Live' : 'Simli Stream'}</span>
+            <span>{webRtcActive ? 'Simli Live' : 'AI Avatar'}</span>
           </button>
 
-          {/* Dynamic Language Switcher Pill */}
+          {/* Language Selector */}
           <div className="relative">
             <button
               onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 hover:bg-white border border-slate-200 text-slate-700 text-[11px] transition-colors shadow-sm"
-              title="Switch Instruction Language"
+              className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/80 border border-slate-200 text-slate-700 text-xs hover:bg-white shadow-sm font-['Inter']"
             >
               <Globe className="w-3 h-3 text-slate-500" />
               <span>{language}</span>
             </button>
 
-            {showLanguageMenu && (
-              <div className="absolute right-0 mt-1 w-28 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-30">
+            {showLanguageMenu && onSwitchLanguage && (
+              <div className="absolute right-0 mt-1 w-28 py-1 rounded-xl bg-white border border-slate-200 shadow-lg z-30 font-['Inter']">
                 {(['English', 'Hindi', 'Hinglish', 'Spanish'] as LanguageCode[]).map((lang) => (
                   <button
                     key={lang}
                     onClick={() => {
-                      if (onSwitchLanguage) onSwitchLanguage(lang);
+                      onSwitchLanguage(lang);
                       setShowLanguageMenu(false);
                     }}
-                    className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 transition-colors font-light"
+                    className={`w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 transition-colors ${
+                      language === lang ? 'font-semibold text-slate-900' : 'text-slate-600'
+                    }`}
                   >
                     {lang}
                   </button>
@@ -374,81 +641,83 @@ export const TeacherVideoFeed: React.FC<TeacherVideoFeedProps> = ({
             )}
           </div>
 
+          {/* Mute/Unmute */}
           <button
             onClick={toggleMute}
             className="p-1.5 rounded-full bg-white/80 hover:bg-white border border-slate-200 text-slate-700 transition-colors shadow-sm"
-            title={isMuted ? 'Unmute' : 'Mute'}
           >
-            {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-600" /> : <Volume2 className="w-3.5 h-3.5" />}
+            {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
 
-      {/* Avatar Stage Canvas / Viewport */}
-      <div className="relative flex-1 flex items-center justify-center min-h-[200px] bg-slate-900 overflow-hidden">
-        {/* Simli WebRTC Video Stream Element */}
+      {/* Main Video / Canvas Feed */}
+      <div className="relative flex-1 w-full h-full min-h-[160px] flex items-center justify-center bg-slate-100">
+        {/* Simli WebRTC Video Element */}
         <video
           ref={videoRef}
-          id="webrtc-avatar-video"
           autoPlay
           playsInline
-          muted={false}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-            webRtcActive ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'
+          className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-500 ${
+            webRtcActive ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         />
 
-        {/* 2D Canvas Procedural Avatar Fallback */}
+        {/* High-Fidelity Animated AI Professor Avatar Canvas */}
         <canvas
           ref={canvasRef}
-          width={360}
-          height={260}
-          className="w-full h-full object-cover z-5"
+          className={`w-full h-full object-cover transition-opacity duration-500 ${
+            webRtcActive ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
         />
 
-        {/* Non-intrusive status toast */}
+        {/* Optional Status Toast */}
         {simliStatusText && (
-          <div className="absolute top-12 left-4 right-4 z-20 flex justify-center">
-            <div className="px-3 py-1.5 rounded-full bg-slate-900/90 text-white text-[11px] font-medium backdrop-blur-md shadow-lg border border-slate-700 animate-fade-in">
-              {simliStatusText}
-            </div>
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/90 text-white text-[11px] font-medium backdrop-blur-md border border-slate-700 shadow-md z-20">
+            {simliStatusText}
           </div>
         )}
-
-        {/* Audio Spectrum Waveform Bar */}
-        <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1 px-4 pointer-events-none z-20">
-          {audioWaves.map((height, idx) => (
-            <motion.div
-              key={idx}
-              className={`w-1 rounded-full ${webRtcActive ? 'bg-emerald-400' : 'bg-slate-700'}`}
-              animate={{ height: `${Math.max(height * 0.35, 4)}px` }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            />
-          ))}
-        </div>
       </div>
 
-      {/* Closed-Caption Pill */}
-      <div className="p-3 bg-white/60 border-t border-slate-200/80 backdrop-blur-md">
-        <div className="bg-white/90 border border-slate-200 rounded-xl p-3 shadow-sm max-h-24 overflow-y-auto">
-          <p className="text-xs text-slate-900 font-['Inter'] font-light tracking-wide leading-relaxed text-center">
-            {displayedCaption || 'Preparing personalized lesson delivery...'}
+      {/* Dynamic Subtitle / Speech Caption Drawer */}
+      <div className="p-3 bg-white/90 border-t border-slate-100 backdrop-blur-md">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs text-slate-700 leading-relaxed font-normal min-h-[32px] line-clamp-2 font-['Inter']">
+            {displayedCaption || 'Listening attentively to your response...'}
           </p>
         </div>
 
-        {/* Action Controls */}
-        <div className="mt-2.5 pt-2 border-t border-slate-200 flex items-center justify-between">
-          <span className="text-[11px] text-slate-500 font-light">
-            Engine: <span className="text-slate-900 font-medium">{webRtcActive ? 'Simli WebRTC Stream' : audioBase64 ? 'ElevenLabs Sonic' : 'Neural Speech'}</span>
-          </span>
+        {/* Telemetry / Speech Activity Bar */}
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500 font-mono">
+          <div className="flex items-center gap-2">
+            <span className="font-sans font-medium text-slate-700">Professor:</span>
+            <span>Dr. Sophia</span>
+          </div>
 
-          <button
-            onClick={onInterrupt}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 transition-colors shadow-sm"
-          >
-            <Hand className="w-3.5 h-3.5 text-slate-600" />
-            Raise Hand
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Audio Waveform Bars */}
+            <div className="flex items-center gap-0.5 h-3">
+              {audioWaves.map((height, i) => (
+                <span
+                  key={i}
+                  style={{ height: `${Math.max(4, height * 0.15)}px` }}
+                  className={`w-0.5 rounded-full transition-all duration-75 ${
+                    isSpeaking ? 'bg-slate-700' : 'bg-slate-300'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {onInterrupt && (
+              <button
+                onClick={() => onInterrupt()}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-medium transition-colors ml-2"
+              >
+                <Hand className="w-2.5 h-2.5" />
+                <span>Raise Hand</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

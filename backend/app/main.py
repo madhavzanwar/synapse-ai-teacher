@@ -591,21 +591,44 @@ async def classroom_websocket_endpoint(websocket: WebSocket, session_id: str):
     Bi-directional WebSocket connection for streaming live blackboard updates, teacher speech, and student responses.
     """
     await websocket.accept()
+    query_params = dict(websocket.query_params)
+    param_topic = query_params.get("topic")
+    param_lang = query_params.get("lang") or "Hinglish"
+    param_level = query_params.get("level") or "Intermediate"
+    param_doc_id = query_params.get("doc_id")
+
     session = session_manager.get_session(session_id)
 
     if not session:
-        logger.info(f"Session {session_id} not found in memory, creating auto-session...")
+        chosen_topic = param_topic
+        if param_doc_id:
+            doc_meta = rag_engine.get_document_metadata(param_doc_id)
+            if doc_meta and (not chosen_topic or chosen_topic == "Attention Mechanism in Transformers"):
+                chosen_topic = doc_meta.detected_title
+        if not chosen_topic:
+            chosen_topic = "Attention Mechanism in Transformers"
+
+        logger.info(f"Session {session_id} not found in memory, creating auto-session for topic='{chosen_topic}' doc_id='{param_doc_id}'...")
         from app.schemas.lesson import StudentProfile
-        default_profile = StudentProfile(
-            target_topic="Attention Mechanism in Transformers",
-            educational_level="Intermediate",
-            language="Hinglish",
+        auto_profile = StudentProfile(
+            target_topic=chosen_topic,
+            educational_level=param_level,
+            language=param_lang,
             available_time_minutes="20",
+            uploaded_document_ids=[param_doc_id] if param_doc_id else []
         )
         session = session_manager.create_session(
             session_id=session_id,
-            profile=default_profile
+            profile=auto_profile
         )
+    else:
+        if param_topic and param_topic != session.profile.target_topic and session.profile.target_topic == "Attention Mechanism in Transformers":
+            session.profile.target_topic = param_topic
+        if param_doc_id and not session.grounding_context:
+            if not session.profile.uploaded_document_ids:
+                session.profile.uploaded_document_ids = [param_doc_id]
+            chunks = rag_engine.retrieve_context(query=session.profile.target_topic, document_id=param_doc_id, top_k=5)
+            session.grounding_context = rag_engine.format_grounding_context(chunks)
 
     await session_manager.register_connection(session_id, websocket)
     logger.info(f"WebSocket connected for session: {session_id}")

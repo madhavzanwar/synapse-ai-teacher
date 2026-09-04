@@ -107,6 +107,18 @@ export default function HomePage() {
       if (res.success && res.document_id) {
         setUploadedDocId(res.document_id);
         setUploadedDocName(res.filename);
+        let detected = res.title || (res as any).detected_title;
+        if (!detected && file.name) {
+          detected = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ');
+        }
+        if (detected) {
+          const cleanTitle = detected
+            .replace(/^[0-9a-f-]{36}_?/i, '')
+            .replace(/[_-]+/g, ' ')
+            .replace(/\b\w/g, (c: string) => c.toUpperCase())
+            .trim();
+          setTopic(cleanTitle);
+        }
       }
     } catch (err) {
       console.warn('File upload error:', err);
@@ -144,16 +156,18 @@ export default function HomePage() {
         uploaded_document_ids: uploadedDocId ? [uploadedDocId] : [],
       };
       const res = await createClassroomSession(profile);
+      const docQuery = uploadedDocId ? `&docId=${encodeURIComponent(uploadedDocId)}` : '';
       if (res.session_id) {
         router.push(
-          `/classroom?sessionId=${res.session_id}&topic=${encodeURIComponent(topic)}&lang=${language}&level=${educationalLevel}&persona=${instructorPersona}`
+          `/classroom?sessionId=${res.session_id}&topic=${encodeURIComponent(topic)}&lang=${language}&level=${educationalLevel}&persona=${instructorPersona}${docQuery}`
         );
       }
     } catch (err) {
       console.warn('Failed to create classroom session:', err);
       const fallbackId = `local-${Date.now()}`;
+      const docQuery = uploadedDocId ? `&docId=${encodeURIComponent(uploadedDocId)}` : '';
       router.push(
-        `/classroom?sessionId=${fallbackId}&topic=${encodeURIComponent(topic)}&lang=${language}&level=${educationalLevel}&persona=${instructorPersona}`
+        `/classroom?sessionId=${fallbackId}&topic=${encodeURIComponent(topic)}&lang=${language}&level=${educationalLevel}&persona=${instructorPersona}${docQuery}`
       );
     } finally {
       setIsStarting(false);

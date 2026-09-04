@@ -161,14 +161,20 @@ class RAGEngine:
     # Document Parsing Layer
     # -----------------------------------------------------------------------
 
-    def ingest_document(self, file_path: str, document_id: Optional[str] = None) -> DocumentMetadata:
+    def ingest_document(
+        self,
+        file_path: str,
+        document_id: Optional[str] = None,
+        original_filename: Optional[str] = None
+    ) -> DocumentMetadata:
         """Parse file from disk path into structured chunks with metadata."""
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        filename = os.path.basename(file_path)
+        raw_filename = original_filename or os.path.basename(file_path)
+        filename = re.sub(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_?", "", raw_filename, flags=re.IGNORECASE)
         doc_id = document_id or str(uuid.uuid4())
-        ext = os.path.splitext(filename)[1].lower()
+        ext = os.path.splitext(raw_filename)[1].lower()
 
         logger.info(f"Ingesting document '{filename}' ({ext}) as ID: {doc_id}")
 
@@ -186,7 +192,7 @@ class RAGEngine:
             file_type = "pptx"
         else:
             parsed_pages, sections = self._parse_text_markdown(file_path)
-            detected_title = sections[0] if sections else filename
+            detected_title = self._detect_title(parsed_pages, filename)
             file_type = "text"
 
         # Combine text for document store
@@ -235,7 +241,7 @@ class RAGEngine:
             f.write(file_bytes)
 
         try:
-            meta = self.ingest_document(temp_path, document_id=doc_id)
+            meta = self.ingest_document(temp_path, document_id=doc_id, original_filename=filename)
             return meta
         finally:
             if os.path.exists(temp_path):
@@ -408,14 +414,19 @@ class RAGEngine:
 
     def _detect_title(self, parsed_pages: List[Tuple[int, str]], filename: str) -> str:
         """Extract document title from first page or fall back to filename."""
+        clean_filename = re.sub(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_?", "", filename, flags=re.IGNORECASE)
+        clean_filename = os.path.splitext(clean_filename)[0].replace("_", " ").replace("-", " ").title()
+
         if parsed_pages:
             first_page = parsed_pages[0][1]
             lines = [l.strip() for l in first_page.split("\n") if l.strip()]
             for line in lines[:5]:
-                # Title heuristic: reasonable length, not starting with copyright or page number
-                if 5 < len(line) < 80 and not line.lower().startswith(("page", "http", "doi", "copyright")):
-                    return re.sub(r"^#+\s*", "", line)
-        return os.path.splitext(filename)[0].replace("_", " ").replace("-", " ").title()
+                # Title heuristic: reasonable length, not starting with copyright or page number or numbers
+                if 5 < len(line) < 80 and not line.lower().startswith(("page", "http", "doi", "copyright")) and not re.match(r"^\d+\s*[\.\)xX\*]", line):
+                    title_candidate = re.sub(r"^#+\s*", "", line).strip()
+                    if len(title_candidate) > 4:
+                        return title_candidate
+        return clean_filename or "Uploaded Document"
 
     # -----------------------------------------------------------------------
     # Intelligent Semantic Chunking
@@ -571,6 +582,9 @@ class RAGEngine:
 
         if not candidate_indices:
             return []
+
+        if len(candidate_indices) <= top_k:
+            return [self.chunks[idx] for idx in candidate_indices]
 
         self._ensure_bm25_index()
         query_tokens = tokenize_text(query)

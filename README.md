@@ -60,7 +60,7 @@ Traditional AI education tools (chatbots, static flashcard generators, text summ
 | :---: | :--- |
 | ![Synapse Hero](public/01-synapse-hero.png) | **Ambient Fluid Onboarding (`/`)**: Liquid glass aesthetic with ambient floating physics, instant topic triggers, and live navigation. |
 | ![Curriculum Configurator](public/02-curriculum-configurator.png) | **Adaptive Curriculum Configurator**: Multi-column PDF/notes upload, 3 teacher personas, 4 languages, and custom time budgets. |
-| ![Live Classroom](public/03-live-classroom.png) | **Interactive Classroom (`/classroom`)**: Real-time smart whiteboard, video avatar feed, and Socratic checkpoint drawer. |
+| ![Live Classroom](public/new-tutor.jpeg) | **Interactive Classroom (`/classroom`)**: Real-time smart whiteboard, video avatar feed, and Socratic checkpoint drawer. |
 | ![Student Dashboard](public/04-student-dashboard.png) | **Mastery Dashboard (`/dashboard`)**: Persistent multi-day skill tree roadmap, radar charts, weak node tracking, and Anki exports. |
 
 ---
