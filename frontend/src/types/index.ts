@@ -145,19 +145,26 @@ export interface ModuleMasteryRecord {
 export interface MasteryReport {
   session_id: string;
   topic: string;
-  overall_mastery_percentage: number;
-  summary_feedback: string;
-  strengths: string[];
-  areas_for_review: string[];
+  overall_mastery_percentage?: number;
+  summary_feedback?: string;
+  strengths?: string[];
+  areas_for_review?: string[];
   concept_breakdown?: Array<{
     subject: string;
     score: number;
     fullMark: number;
   }>;
   actionable_next_steps?: string[];
-  module_records: ModuleMasteryRecord[];
-  recommended_next_topics: string[];
+  module_records?: ModuleMasteryRecord[];
+  recommended_next_topics?: string[];
   developer_watermark?: string;
+  student_id?: string;
+  completion_timestamp?: string;
+  overall_score?: number;
+  radar?: Record<string, number>;
+  remaining_misconceptions?: string[];
+  remedial_actions_taken?: number;
+  next_recommended_topics?: string[];
 }
 
 export interface StudyFlashcard {

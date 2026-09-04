@@ -228,7 +228,7 @@ export const MasteryReportModal: React.FC<MasteryReportModalProps> = ({
                         Demonstrated Conceptual Strengths
                       </h4>
                       <ul className="space-y-2">
-                        {report.strengths.map((str, idx) => (
+                        {(report.strengths || []).map((str, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-light font-['Inter']">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                             <span>{str}</span>
@@ -244,7 +244,7 @@ export const MasteryReportModal: React.FC<MasteryReportModalProps> = ({
                         Targeted Review & Misconceptions Remediated
                       </h4>
                       <ul className="space-y-2">
-                        {report.areas_for_review.map((area, idx) => (
+                        {(report.areas_for_review || []).map((area, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-light font-['Inter']">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
                             <span>{area}</span>
